@@ -23,8 +23,12 @@ client.on('message', message => {
             func.syncroles(message.author.id, message);
         }
 
-        if (command === "welcomeMessage" && message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
-            func.welcomeMessage(message);
+        if (command === "welcomeMessage") {
+            if (message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
+                func.welcomeMessage(message);
+            } else {
+                message.reply("**Error:** Insufficient Permission.");
+            }
         }
 
     }
