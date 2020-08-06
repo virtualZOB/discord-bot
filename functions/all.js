@@ -49,11 +49,11 @@ module.exports = {
             // Roles (END)
 
             // Assigning (START)
-            message.member.addRole(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"))
-            message.member.addRole(prim_role);
+            message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"))
+            message.member.roles.add(prim_role);
 
             if (staff_role) {
-                message.member.addRole(staff_role);
+                message.member.roles.add(staff_role);
             }
 
             message.member.setNickname(message.content.replace('changeNick ', nickname));
