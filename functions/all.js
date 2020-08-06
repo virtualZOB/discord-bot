@@ -32,24 +32,24 @@ module.exports = {
 
             // Roles (START)
             if (type === "loa") {
-                let prim_role = message.guild.roles.find(role => role.name === "Mutual Visiting Controller");
+                let prim_role = message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller");
             } else if (type === "vis") {
-                let prim_role = message.guild.roles.find(role => role.name === "Visiting Controller");
+                let prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
             } else {
-                let prim_role = message.guild.roles.find(role => role.name === FACILITY_ID + " Controller");
+                let prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
             }
 
             if (user.staff !== 'zzzz') {
                 if (user.staff == "ATM" || user.staff == "DATM" || user.staff == "TA" || user.staff == "ATA") {
-                    let staff_role = message.guild.roles.find(role => role.name === "Senior Staff");
+                    let staff_role = message.guild.roles.cache.find(role => role.name === "Senior Staff");
                 } else {
-                    let staff_role = message.guild.roles.find(role => role.name === "Facility Staff");
+                    let staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
                 }
             }
             // Roles (END)
 
             // Assigning (START)
-            message.member.addRole(message.guild.roles.find(role => role.name === "VATSIM Controller"))
+            message.member.addRole(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"))
             message.member.addRole(prim_role);
 
             if (staff_role) {
