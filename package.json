@@ -25,6 +25,8 @@
   },
   "homepage": "https://github.com/virtualZOB/discord-bot#readme",
   "dependencies": {
-    "discord.js": "^12.2.0"
+    "axios": "^0.19.2",
+    "discord.js": "^12.2.0",
+    "fs": "0.0.1-security"
   }
 }
