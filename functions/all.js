@@ -4,7 +4,7 @@ const client = new Discord.Client();
 
 const site_token = process.env.site_token;
 const site_url = process.env.site_url;
-const facility_id = process.env.FACILITY_ID;
+const FACILITY_ID = process.env.FACILITY_ID;
 
 module.exports = {
     syncroles: async function (discord_id, message) {
