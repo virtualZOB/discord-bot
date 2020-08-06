@@ -23,7 +23,7 @@ client.on('message', message => {
             func.syncroles(message.author.id, message);
         }
 
-        if (command === "welcomeMessage") {
+        if (command === "welcomemessage") {
             if (message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
                 func.welcomeMessage(message);
             } else {
