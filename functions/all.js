@@ -61,7 +61,9 @@ module.exports = {
             message.member.setNickname(nickname);
             // Assigning (END)
 
+            message.delete();
             console.log("Success: " + user.discord_name + " Assigned Per System.");
+            
 
         } catch (error) {
             console.log("Error: " + error);
@@ -92,7 +94,9 @@ module.exports = {
             )
             .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
 
-        message.channel.send(embed);
+        message.delete().then(() => {
+            message.channel.send(embed);
+        });
 
     }
 }
