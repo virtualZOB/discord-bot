@@ -32,18 +32,18 @@ module.exports = {
 
             // Roles (START)
             if (type === "loa") {
-                const prim_role = message.guild.roles.find(role => role.name === "Mutual Visiting Controller");
+                let prim_role = message.guild.roles.find(role => role.name === "Mutual Visiting Controller");
             } else if (type === "vis") {
-                const prim_role = message.guild.roles.find(role => role.name === "Visiting Controller");
+                let prim_role = message.guild.roles.find(role => role.name === "Visiting Controller");
             } else {
-                const prim_role = message.guild.roles.find(role => role.name === FACILITY_ID + " Controller");
+                let prim_role = message.guild.roles.find(role => role.name === FACILITY_ID + " Controller");
             }
 
             if (user.staff !== 'zzzz') {
                 if (user.staff == "ATM" || user.staff == "DATM" || user.staff == "TA" || user.staff == "ATA") {
-                    const staff_role = message.guild.roles.find(role => role.name === "Senior Staff");
+                    let staff_role = message.guild.roles.find(role => role.name === "Senior Staff");
                 } else {
-                    const staff_role = message.guild.roles.find(role => role.name === "Facility Staff");
+                    let staff_role = message.guild.roles.find(role => role.name === "Facility Staff");
                 }
             }
             // Roles (END)
@@ -52,7 +52,7 @@ module.exports = {
             message.member.addRole(message.guild.roles.find(role => role.name === "VATSIM Controller"))
             message.member.addRole(prim_role);
 
-            if (user.staff !== 'zzzz') {
+            if (staff_role) {
                 message.member.addRole(staff_role);
             }
 
