@@ -11,7 +11,7 @@ module.exports = {
         try {
             const response = await axios.get(site_url + '/api/data/bot/?discord_id=' + discord_id + '&key=' + site_token);
             
-            const user = JSON.parse(response.data);
+            const user = response.data;
 
             // Setting Values
             const full_name = user.first_name + ' ' + user.last_name;
