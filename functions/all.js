@@ -26,7 +26,7 @@ module.exports = {
             }
 
             if (user.staff !== 'zzzz') {
-                const nickname = nickname + ' | ' + user.staff;
+                const nickname = full_name + ' | ' + user.staff;
             }
             // Nickname (END)
 
