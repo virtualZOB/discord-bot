@@ -15,7 +15,7 @@ client.on('ready', () => {
 const functionFiles = fs.readdirSync('./functions').filter(file => file.endsWith('.js'));
 
 for (const file of functionFiles) {
-    const func = require('./commands/' + file);
+    const func = require('./functions/' + file);
 }
 // Functions (END)
 
