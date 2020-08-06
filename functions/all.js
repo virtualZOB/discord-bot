@@ -56,7 +56,7 @@ module.exports = {
                 message.member.roles.add(staff_role);
             }
 
-            message.member.setNickname(message.content.replace('changeNick ', nickname));
+            message.member.setNickname(nickname);
             // Assigning (END)
 
             message.reply("**Success!**");
