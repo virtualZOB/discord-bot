@@ -20,30 +20,30 @@ module.exports = {
 
             // Nickname (START)
             if (type === "loa" || type === "vis") {
-                const nickname = full_name + ' | ' + facility; 
+                var nickname = full_name + ' | ' + facility; 
             } else {
-                const nickname = full_name;
+                var nickname = full_name;
             }
 
             if (user.staff !== 'zzzz') {
-                const nickname = full_name + ' | ' + user.staff;
+                var nickname = full_name + ' | ' + user.staff;
             }
             // Nickname (END)
 
             // Roles (START)
             if (type === "loa") {
-                let prim_role = message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller");
+                var prim_role = message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller");
             } else if (type === "vis") {
-                let prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
+                var prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
             } else {
-                let prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
+                var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
             }
 
             if (user.staff !== 'zzzz') {
                 if (user.staff == "ATM" || user.staff == "DATM" || user.staff == "TA" || user.staff == "ATA") {
-                    let staff_role = message.guild.roles.cache.find(role => role.name === "Senior Staff");
+                    var staff_role = message.guild.roles.cache.find(role => role.name === "Senior Staff");
                 } else {
-                    let staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
+                    var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
                 }
             }
             // Roles (END)
