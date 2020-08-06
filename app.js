@@ -4,8 +4,6 @@ const client = new Discord.Client();
 
 // Setting Values
 const prefix = process.env.prefix;
-const site_token = process.env.site_token;
-const site_url = process.env.site_url;
 
 client.on('ready', () => {
   console.log(`Credentials ${client.user.tag}: Sucessfully Logged On.`);
@@ -22,7 +20,7 @@ client.on('message', message => {
         const command = args.shift().toLowerCase();
 
         if (command === "sync") {
-            func.syncroles(message.author.id, site_token, site_url);
+            func.syncroles(message.author.id, message);
         }
 
     }
