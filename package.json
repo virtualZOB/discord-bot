@@ -1,0 +1,30 @@
+{
+  "name": "discord-bot",
+  "version": "1.0.0",
+  "description": "The Discord Bot for the Virtual Cleveland ARTCC on the VATSIM Network which is utilized for basic functions as needed by the Cleveland ARTCC discord with functionality through the site: https://clevelandcenter.org/",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/virtualZOB/discord-bot.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "zob",
+    "vzob",
+    "cleveland",
+    "artcc"
+  ],
+  "author": "Aidan Deschene, vZOB Data Services Team",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/virtualZOB/discord-bot/issues"
+  },
+  "homepage": "https://github.com/virtualZOB/discord-bot#readme",
+  "dependencies": {
+    "discord.js": "^12.2.0"
+  }
+}
