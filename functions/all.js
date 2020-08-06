@@ -5,7 +5,7 @@ module.exports = {
         const client = new Discord.Client();
     
         try {
-            const response = await axios.get(site_url + '/api/data/discord/?discord_id=' + discord_id + '&key=' + site_token);
+            const response = await axios.get(site_url + '/api/data/bot/?discord_id=' + discord_id + '&key=' + site_token);
             console.log(response);
         } catch (error) {
             console.log(error);
