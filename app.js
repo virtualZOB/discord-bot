@@ -12,11 +12,7 @@ client.on('ready', () => {
 });
 
 // Functions (START)
-const functionFiles = fs.readdirSync('./functions').filter(file => file.endsWith('.js'));
-
-for (const file of functionFiles) {
-    const func = require('./functions/' + file);
-}
+const func = require('./functions/all');
 // Functions (END)
 
 // Message Listener (START)
@@ -26,7 +22,7 @@ client.on('message', message => {
         const command = args.shift().toLowerCase();
 
         if (command === "sync") {
-            syncroles(message.author.id, site_token, site_url);
+            func.syncroles(message.author.id, site_token, site_url);
         }
 
     }
