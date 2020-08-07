@@ -25,7 +25,7 @@ client.on('guildMemberAdd', member => {
     .setURL(site_url)
     .addFields(
         {
-            name : 'Need Help?',
+            name : 'Need Assistance?',
             value : 'Welcome to the Virtual ' + FACILITY_NAME + ' Official Discord Server; the primary communication method for all means regarding the ARTCC. If you are in need of assistance please message one of our @Facility Staff, and change your Discord "nickname" to your full name associated with your VATSIM account. If no assistance is required please follow the instructions in the "welcome" channel, and have a great rest of your day!',
             inline : false
         }
@@ -42,7 +42,7 @@ client.on('guildMemberAdd', member => {
 client.on('message', message => {
 
     if (message.content.startsWith(prefix)) {
-        
+
         const args = message.content.slice(prefix.length).split(/ +/);
         const command = args.shift().toLowerCase();
 

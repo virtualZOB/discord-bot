@@ -28,24 +28,24 @@ module.exports = {
                     var nickname = full_name + ' | ' + user.initials;
                 }
 
-                if (user.staff !== 'zzzz') {
-                    var nickname = full_name + ' | ' + user.staff;
-                }
-
-                if (user.mentor != '') {
-                    var nickname = full_name + ' | MTR'; 
-                }
-
-                if (user.ins != '') {
-                    var nickname = full_name + ' | INS'; 
-                }
-
                 if (user.facility === 'ZHQ') {
                     var nickname = full_name + ' | VATUSA#'; 
                 }
 
                 if (user.rating === 'ADM') {
                     var nickname = full_name + ' | VAT???#'; 
+                }
+                
+                if (user.mentor == 'Yes') {
+                    var nickname = full_name + ' | MTR'; 
+                }
+
+                if (user.ins == 'Yes') {
+                    var nickname = full_name + ' | INS'; 
+                }
+
+                if (user.staff !== 'zzzz') {
+                    var nickname = full_name + ' | ' + user.staff;
                 }
                 // Nickname (END)
 
@@ -84,7 +84,7 @@ module.exports = {
                     message.member.roles.add(staff_role);
                 }
 
-                if (user.mentor != '' || user.ins != '') {
+                if (user.mentor == 'Yes' || user.ins == 'Yes') {
                     message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Training Staff"));
                 }
 
