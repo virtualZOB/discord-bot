@@ -22,7 +22,7 @@ module.exports = {
                 const facility = user.facility;
 
                 // Nickname (START)
-                if (type === "loa" || type === "vis") {
+                if (type === "loa") {
                     var nickname = full_name + ' | ' + facility; 
                 } else {
                     var nickname = full_name + ' | ' + user.initials;
