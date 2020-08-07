@@ -98,7 +98,7 @@ module.exports = {
                 )
                 .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
 
-                client.users.cache.get(discord_id).send(embed);
+                message.author.send(embed);
                 // Message (END)
 
                 console.log("Success: " + user.discord_name + " Assigned Per System.");
@@ -107,7 +107,7 @@ module.exports = {
                 const embed = new Discord.MessageEmbed()
                 .setColor('#f70d1a')
                 .setTitle('Account Not Linked')
-                .setURL(site_url + '/api/user/discord/link')
+                .setURL(site_url)
                 .addFields(
                     {
                         name : 'Please Link Account',
@@ -117,7 +117,7 @@ module.exports = {
                 )
                 .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
 
-                client.users.cache.get(discord_id).send(embed);
+                message.author.send(embed);
                 // Message (END)
             }
             
@@ -131,7 +131,7 @@ module.exports = {
         const embed = new Discord.MessageEmbed()
             .setColor('#32cd32')
             .setTitle('Welcome to ' + FACILITY_ID)
-            .setURL(site_url + '/api/user/discord/link')
+            .setURL(site_url)
             .addFields(
                 {
                     name : 'Introduction',
