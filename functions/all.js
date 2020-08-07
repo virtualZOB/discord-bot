@@ -30,6 +30,18 @@ module.exports = {
             if (user.staff !== 'zzzz') {
                 var nickname = full_name + ' | ' + user.staff;
             }
+
+            if (user.mentor != '') {
+                var nickname = full_name + ' | MTR'; 
+            }
+
+            if (user.ins != '') {
+                var nickname = full_name + ' | INS'; 
+            }
+
+            if (user.facility === 'ZHQ') {
+                var nickname = full_name + ' | VATUSA#'; 
+            }
             // Nickname (END)
 
             // Roles (START)
@@ -51,11 +63,19 @@ module.exports = {
             // Roles (END)
 
             // Assigning (START)
-            message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"))
+            message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
             message.member.roles.add(prim_role);
 
             if (staff_role) {
                 message.member.roles.add(staff_role);
+            }
+
+            if (user.mentor != '' || user.ins != '') {
+                message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Training Staff"));
+            }
+
+            if (user.facility === 'ZHQ' || user.rating === 'ADM') {
+                message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM/VATUSA Staff"));
             }
 
             message.member.setNickname(nickname);
