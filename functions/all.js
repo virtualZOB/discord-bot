@@ -87,12 +87,12 @@ module.exports = {
                 // Message (START)
                 const embed = new Discord.MessageEmbed()
                 .setColor('#32cd32')
-                .setTitle('Account Linked')
+                .setTitle('Roles Synced')
                 .setURL(site_url)
                 .addFields(
                     {
-                        name : 'Successfully Linked Account',
-                        value : 'Thank you for joining the Virtual ' + FACILITY_NAME + '. Your Discord account has been successfully linked, and your roles have been synced according to our ARTCC site.',
+                        name : 'Successfully Synced Roles',
+                        value : 'Thank you for joining the Virtual ' + FACILITY_NAME + '. Your roles & nickname have been synced according to our ARTCC site.',
                         inline : false
                     },
                 )
