@@ -43,6 +43,10 @@ module.exports = {
                 if (user.facility === 'ZHQ') {
                     var nickname = full_name + ' | VATUSA#'; 
                 }
+
+                if (user.rating === 'ADM') {
+                    var nickname = full_name + ' | VAT???#'; 
+                }
                 // Nickname (END)
 
                 // Roles (START)
