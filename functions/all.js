@@ -12,77 +12,114 @@ module.exports = {
     syncroles: async function (discord_id, message) {
         try {
             const response = await axios.get(site_url + '/api/data/bot/?discord_id=' + discord_id + '&key=' + site_token);
-            
+           
             const user = response.data;
 
-            // Setting Values
-            const full_name = user.first_name + ' ' + user.last_name;
-            const type = user.type;
-            const facility = user.facility;
+            if (user.status !== "None") {
+                // Setting Values
+                const full_name = user.first_name + ' ' + user.last_name;
+                const type = user.type;
+                const facility = user.facility;
 
-            // Nickname (START)
-            if (type === "loa" || type === "vis") {
-                var nickname = full_name + ' | ' + facility; 
-            } else {
-                var nickname = full_name;
-            }
-
-            if (user.staff !== 'zzzz') {
-                var nickname = full_name + ' | ' + user.staff;
-            }
-
-            if (user.mentor != '') {
-                var nickname = full_name + ' | MTR'; 
-            }
-
-            if (user.ins != '') {
-                var nickname = full_name + ' | INS'; 
-            }
-
-            if (user.facility === 'ZHQ') {
-                var nickname = full_name + ' | VATUSA#'; 
-            }
-            // Nickname (END)
-
-            // Roles (START)
-            if (type === "loa") {
-                var prim_role = message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller");
-            } else if (type === "vis") {
-                var prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
-            } else {
-                var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
-            }
-
-            if (user.staff !== 'zzzz') {
-                if (user.staff == "ATM" || user.staff == "DATM" || user.staff == "TA" || user.staff == "ATA") {
-                    var staff_role = message.guild.roles.cache.find(role => role.name === "Senior Staff");
+                // Nickname (START)
+                if (type === "loa" || type === "vis") {
+                    var nickname = full_name + ' | ' + facility; 
                 } else {
-                    var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
+                    var nickname = full_name;
                 }
+
+                if (user.staff !== 'zzzz') {
+                    var nickname = full_name + ' | ' + user.staff;
+                }
+
+                if (user.mentor != '') {
+                    var nickname = full_name + ' | MTR'; 
+                }
+
+                if (user.ins != '') {
+                    var nickname = full_name + ' | INS'; 
+                }
+
+                if (user.facility === 'ZHQ') {
+                    var nickname = full_name + ' | VATUSA#'; 
+                }
+                // Nickname (END)
+
+                // Roles (START)
+                if (type === "loa") {
+                    var prim_role = message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller");
+                } else if (type === "vis") {
+                    var prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
+                } else {
+                    var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
+                }
+
+                if (user.staff !== 'zzzz') {
+                    if (user.staff == "ATM" || user.staff == "DATM" || user.staff == "TA" || user.staff == "ATA") {
+                        var staff_role = message.guild.roles.cache.find(role => role.name === "Senior Staff");
+                    } else {
+                        var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
+                    }
+                }
+                // Roles (END)
+
+                // Assigning (START)
+                message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
+                message.member.roles.add(prim_role);
+
+                if (staff_role) {
+                    message.member.roles.add(staff_role);
+                }
+
+                if (user.mentor != '' || user.ins != '') {
+                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Training Staff"));
+                }
+
+                if (user.facility === 'ZHQ' || user.rating === 'ADM') {
+                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM/VATUSA Staff"));
+                }
+
+                message.member.setNickname(nickname);
+                // Assigning (END)
+
+                message.delete();
+
+                // Message (START)
+                const embed = new Discord.MessageEmbed()
+                .setColor('#32cd32')
+                .setTitle('Account Linked')
+                .setURL(site_url)
+                .addFields(
+                    {
+                        name : 'Successfully Linked Account',
+                        value : 'Thank you for joining the Virtual ' + FACILITY_NAME + '. Your Discord account has been successfully linked, and your roles have been synced according to our ARTCC site.',
+                        inline : false
+                    },
+                )
+                .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+
+                client.users.get(discord_id).send(embed);
+                // Message (END)
+
+                console.log("Success: " + user.discord_name + " Assigned Per System.");
+            } else {
+                // Message (START)
+                const embed = new Discord.MessageEmbed()
+                .setColor('#f70d1a')
+                .setTitle('Account Not Linked')
+                .setURL(site_url + '/api/user/discord/link')
+                .addFields(
+                    {
+                        name : 'Please Link Account',
+                        value : 'If you have not already done so please link your Discord account to our ARTCC site (' + site_url + '), and re-execute the command.',
+                        inline : false
+                    },
+                )
+                .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+
+                client.users.get(discord_id).send(embed);
+                // Message (END)
             }
-            // Roles (END)
-
-            // Assigning (START)
-            message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
-            message.member.roles.add(prim_role);
-
-            if (staff_role) {
-                message.member.roles.add(staff_role);
-            }
-
-            if (user.mentor != '' || user.ins != '') {
-                message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Training Staff"));
-            }
-
-            if (user.facility === 'ZHQ' || user.rating === 'ADM') {
-                message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM/VATUSA Staff"));
-            }
-
-            message.member.setNickname(nickname);
-            // Assigning (END)
-
-            message.delete();
-            console.log("Success: " + user.discord_name + " Assigned Per System.");
             
 
         } catch (error) {
