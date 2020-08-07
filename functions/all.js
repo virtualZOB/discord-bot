@@ -25,7 +25,7 @@ module.exports = {
                 if (type === "loa" || type === "vis") {
                     var nickname = full_name + ' | ' + facility; 
                 } else {
-                    var nickname = full_name;
+                    var nickname = full_name + ' | ' + user.initials;
                 }
 
                 if (user.staff !== 'zzzz') {
@@ -62,6 +62,15 @@ module.exports = {
                     }
                 }
                 // Roles (END)
+
+                // Removing (START)
+                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller"));
+                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Visiting Controller"));
+                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller"));
+                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Facility Staff"));
+                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Training Staff"));
+
+                // Removing (END)
 
                 // Assigning (START)
                 message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
@@ -103,6 +112,9 @@ module.exports = {
 
                 console.log("Success: " + user.discord_name + " Assigned Per System.");
             } else {
+
+                message.delete();
+
                 // Message (START)
                 const embed = new Discord.MessageEmbed()
                 .setColor('#f70d1a')
