@@ -98,7 +98,7 @@ module.exports = {
                 )
                 .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
 
-                client.users.get(discord_id).send(embed);
+                client.users.cache.get(discord_id).send(embed);
                 // Message (END)
 
                 console.log("Success: " + user.discord_name + " Assigned Per System.");
@@ -117,7 +117,7 @@ module.exports = {
                 )
                 .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
 
-                client.users.get(discord_id).send(embed);
+                client.users.cache.get(discord_id).send(embed);
                 // Message (END)
             }
             
