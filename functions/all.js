@@ -20,7 +20,7 @@ module.exports = {
                 if (user.discord_nick_pref > 0) {
                     var name = user.first_name;
                 } else {
-                    var name = user.first_name + ' ' . user.last_name;
+                    var name = user.first_name + ' ' + user.last_name;
                 }
 
                 const type = user.type;
