@@ -17,35 +17,40 @@ module.exports = {
 
             if (user.status !== "None") {
                 // Setting Values
-                const full_name = user.first_name + ' ' + user.last_name;
+                if (user.discord_nick_pref > 0) {
+                    const name = user.first_name;
+                } else {
+                    const name = user.first_name + ' ' . user.last_name;
+                }
+
                 const type = user.type;
                 const facility = user.facility;
 
                 // Nickname (START)
                 if (type === "loa") {
-                    var nickname = full_name + ' | ' + facility; 
+                    var nickname = name + ' | ' + facility; 
                 } else {
-                    var nickname = full_name + ' | ' + user.initials;
+                    var nickname = name + ' | ' + user.initials;
                 }
 
                 if (user.facility === 'ZHQ') {
-                    var nickname = full_name + ' | VATUSA#'; 
+                    var nickname = name + ' | VATUSA#'; 
                 }
 
                 if (user.rating === 'ADM') {
-                    var nickname = full_name + ' | VAT???#'; 
+                    var nickname = name + ' | VAT???#'; 
                 }
                 
                 if (user.mentor == 'Yes') {
-                    var nickname = full_name + ' | MTR'; 
+                    var nickname = name + ' | MTR'; 
                 }
 
                 if (user.ins == 'Yes') {
-                    var nickname = full_name + ' | INS'; 
+                    var nickname = name + ' | INS'; 
                 }
 
                 if (user.staff !== 'zzzz') {
-                    var nickname = full_name + ' | ' + user.staff;
+                    var nickname = name + ' | ' + user.staff;
                 }
                 // Nickname (END)
 
