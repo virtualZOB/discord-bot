@@ -18,9 +18,9 @@ module.exports = {
             if (user.status !== "None") {
                 // Setting Values
                 if (user.discord_nick_pref > 0) {
-                    const name = user.first_name;
+                    var name = user.first_name;
                 } else {
-                    const name = user.first_name + ' ' . user.last_name;
+                    var name = user.first_name + ' ' . user.last_name;
                 }
 
                 const type = user.type;
