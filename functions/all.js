@@ -200,7 +200,7 @@ module.exports = {
            
         const data = response.data;
 
-        data.forEach(data => function() {
+        data.forEach(async function(data) {
             // Setting Values
             var discord_id = data.discord_id;
             var rating = data.rating;
