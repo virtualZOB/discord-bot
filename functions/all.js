@@ -87,7 +87,7 @@ module.exports = {
                 // Roles (END)
 
                 // Removing (START)
-                ratings.foreach(rating_name => 
+                ratings.forEach(rating_name => 
                     message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name)));
 
                 message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller"));
