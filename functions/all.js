@@ -8,6 +8,20 @@ const site_url = process.env.site_url;
 const FACILITY_ID = process.env.FACILITY_ID;
 const FACILITY_NAME = process.env.FACILITY_NAME;
 
+// ARRAY: Ratings
+const ratings = [
+    'ADM',
+    'SUP',
+    'I3',
+    'I1',
+    'C3',
+    'C1',
+    'S3',
+    'S2',
+    'S1',
+    'OBS'
+]
+
 module.exports = {
     syncroles: async function (discord_id, message) {
         try {
@@ -73,6 +87,9 @@ module.exports = {
                 // Roles (END)
 
                 // Removing (START)
+                ratings.foreach(rating_name => 
+                    message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name)));
+
                 message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller"));
                 message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Visiting Controller"));
                 message.member.roles.remove(message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller"));
@@ -83,6 +100,7 @@ module.exports = {
 
                 // Assigning (START)
                 message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
+                message.member.roles.add(message.guild.roles.cache.find(role => role.name === user.rating));
                 message.member.roles.add(prim_role);
 
                 if (staff_role) {
