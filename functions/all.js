@@ -5,6 +5,7 @@ const client = new Discord.Client();
 // GETTING: Environment Variables
 const site_token = process.env.site_token;
 const site_url = process.env.site_url;
+const guild_id = process.env.guild_id;
 const FACILITY_ID = process.env.FACILITY_ID;
 const FACILITY_NAME = process.env.FACILITY_NAME;
 
@@ -195,31 +196,34 @@ module.exports = {
         });
 
     },
-    updateRatings: async function() {
-        const response = await axios.get(site_url + '/api/data/bot/?discord_id=0&all=y&key=' + site_token);
+    // updateRatings: async function() {
+    //     const response = await axios.get(site_url + '/api/data/bot/?discord_id=0&all=y&key=' + site_token);
            
-        const data = response.data;
+    //     const data = response.data;
 
-        data.forEach(async function(data) {
-            // Setting Values
-            var discord_id = data.discord_id;
-            var rating = data.rating;
+    //     data.forEach(async function(data) {
+    //         // Setting Values
+    //         var discord_id = data.discord_id;
+    //         var rating = data.rating;
 
-            var user = client.fetchUser(discord_id);
+    //         // let user = client.guilds.cache.get(guild_id).users.cache.get(discord_id);
+    //         let user = client.users.cache.get(discord_id);
+            
 
-            if (user) {
-                if (!user.roles.cache.has(client.roles.cache.find(role => r.name === rating))) {
-                    ratings.forEach(rating_name => 
-                        user.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name)));
+    //         if (user) {
+    //             if (!user.roles.cache.has(client.roles.cache.find(role => r.name === rating))) {
+    //                 ratings.forEach(rating_name => 
+    //                     user.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name)));
 
-                    user.roles.add(message.guild.roles.cache.find(role => role.name === rating));
-                } else {
-                    // Do Nothing (user has role)
-                }
-            } else {
-                // Do Nothing (user not found)
-            }
+    //                 user.roles.add(message.guild.roles.cache.find(role => role.name === rating));
+    //             } else {
+    //                 // Do Nothing (user has role)
+    //             }
+    //         } else {
+    //             // Do Nothing (user not found)
+    //         }
 
-        });
-    }
+    //     });
+
+    // }
 }

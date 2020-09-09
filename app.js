@@ -58,9 +58,9 @@ client.on('message', message => {
             }
         }
 
-        if (command === "r") {
-            func.updateRatings();
-        }
+        // if (command === "r") {
+        //     func.updateRatings();
+        // }
 
     }
 
