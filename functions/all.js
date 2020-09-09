@@ -195,7 +195,7 @@ module.exports = {
         });
 
     },
-    updateRatings: function() {
+    updateRatings: async function() {
         const response = await axios.get(site_url + '/api/data/bot/?discord_id=0&all=y&key=' + site_token);
            
         const data = response.data;
