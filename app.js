@@ -14,7 +14,7 @@ const func = require('./functions/all');
 // Functions (END)
 
 // Join Listener (START)
-client.on('guildMemberAdd', member => {
+client.on('guildMemberAdd', (member) => {
 
     member.roles.add(member.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
 
@@ -57,10 +57,6 @@ client.on('message', message => {
                 message.reply("**Error:** Insufficient Permission.");
             }
         }
-
-        // if (command === "r") {
-        //     func.updateRatings();
-        // }
 
     }
 
