@@ -69,8 +69,8 @@ module.exports = {
                 }
 
                 // LIVE Functionality (S)
-                if (live == true) {
-                    if (message.member.nickname.includes('LIVE')) {
+                if (live === true) {
+                    if (message.member.displayName.includes('LIVE') == true) {
                         // Do Nothing
                     } else {
                         var nickname = name + ' | LIVE';
