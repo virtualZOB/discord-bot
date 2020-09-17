@@ -47,7 +47,11 @@ client.on('message', message => {
         const command = args.shift().toLowerCase();
 
         if (command === "sync") {
-            func.syncroles(message.author.id, message);
+            func.syncroles(message.author.id, message, false);
+        }
+
+        if (command === "live") {
+            func.syncroles(message.author.id, message, true);
         }
 
         if (command === "welcomemessage") {

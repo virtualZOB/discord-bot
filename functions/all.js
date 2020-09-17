@@ -24,7 +24,7 @@ const ratings = [
 ]
 
 module.exports = {
-    syncroles: async function (discord_id, message) {
+    syncroles: async function (discord_id, message, live) {
         try {
             const response = await axios.get(site_url + '/api/data/bot/?discord_id=' + discord_id + '&key=' + site_token);
            
@@ -67,6 +67,17 @@ module.exports = {
                 if (user.staff !== 'zzzz') {
                     var nickname = name + ' | ' + user.staff;
                 }
+
+                // LIVE Functionality (S)
+                if (live == true) {
+                    if (message.author.displayName.includes('LIVE')) {
+                        // Do Nothing
+                    } else {
+                        var nickname = name + ' | LIVE';
+                    }
+                }
+                // LF (E)
+
                 // Nickname (END)
 
                 // Roles (START)
