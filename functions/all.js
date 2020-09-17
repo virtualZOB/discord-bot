@@ -132,24 +132,51 @@ module.exports = {
 
                 message.delete();
 
-                // Message (START)
-                const embed = new Discord.MessageEmbed()
-                .setColor('#32cd32')
-                .setTitle('Roles Synced')
-                .setURL(site_url)
-                .addFields(
-                    {
-                        name : 'Successfully Synced Roles',
-                        value : 'Thank you for joining the Virtual ' + FACILITY_NAME + '. Your roles & nickname have been synced according to our ARTCC site.',
-                        inline : false
-                    },
-                )
-                .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+                if (live === false) {
+                    // Message (START)
+                    var embed = new Discord.MessageEmbed()
+                    .setColor('#32cd32')
+                    .setTitle('Roles Synced')
+                    .setURL(site_url)
+                    .addFields(
+                        {
+                            name : 'Successfully Synced Roles',
+                            value : 'Thank you for joining the Virtual ' + FACILITY_NAME + '. Your roles & nickname have been synced according to our ARTCC site.',
+                            inline : false
+                        },
+                    )
+                    .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+                    // Message (END)
+                } else {
+                    if (message.member.displayName.includes("LIVE") == true) {
+                        var embed = "We have reset your nickname to it's original state. Thank you for adiding by all of the policies and we hope your stream went well. Happy Controlling!"
+                    } else {
+                        // Message (START)
+                        var embed = new Discord.MessageEmbed()
+                        .setColor('#600080')
+                        .setTitle('Live Status Set')
+                        .setURL(site_url)
+                        .addFields(
+                            {
+                                name : 'Follow The Policies',
+                                value : 'Please remember that your stream is subject to the Facility Operations Policy (https://vats.im/' + FACILITY_ID + '/fop) and VATSIM Code of Conduct (https://vats.im/coc) and to abide by all rules enforcing streams on the Discord and live network respectively.',
+                                inline : false
+                            },
+                            {
+                                name : 'Un-Set Nickname',
+                                value : 'Once you have finished your streaming, and all of your content is to prestine quality and your audience is contempt you may reset your nickname by re-sending this command (**!live**). Happy Controlling!',
+                                inline : false
+                            },
+                        )
+                        .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+                        // Message (END)
+                    }
+                }
 
                 message.author.send(embed);
-                // Message (END)
 
                 console.log("Success: " + user.discord_name + " Assigned Per System.");
+
             } else {
 
                 message.delete();
