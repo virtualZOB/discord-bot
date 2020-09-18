@@ -149,7 +149,7 @@ module.exports = {
                     // Message (END)
                 } else {
                     if (message.member.displayName.includes("LIVE") == true) {
-                        var embed = "We have reset your nickname to it's original state. Thank you for adiding by all of the policies and we hope your stream went well. Happy Controlling!"
+                        var embed = "We have reset your nickname to it's original state. Thank you for abiding by all of the policies and we hope your stream went well. Happy Controlling!"
                     } else {
                         // Message (START)
                         var embed = new Discord.MessageEmbed()
