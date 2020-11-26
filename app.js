@@ -101,7 +101,7 @@ app.post('/postIDS', cors(cors_opt), (req, res) => {
             expiry_date = req.body.expiry_date,
             type        = req.body.type;
 
-    if (client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids4")) {
+    if (client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids")) {
         // SETTING: Embed Message Variable
         const embed = new Discord.MessageEmbed()
             .setColor('#ffff33')
@@ -120,7 +120,7 @@ app.post('/postIDS', cors(cors_opt), (req, res) => {
             )
             .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team');        
 
-        client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids4").send(embed);
+        client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids").send(embed);
 
         res.sendStatus(200);
 
@@ -140,7 +140,7 @@ app.post('/postATIS', cors(cors_opt), (req, res) => {
             config_profile = req.body.config_profile,
             metar       = req.body.metar;
 
-    if (client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids4")) {
+    if (client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids")) {
         // SETTING: Embed Message Variable
         const embed = new Discord.MessageEmbed()
             .setColor('#4ae9ff')
@@ -169,7 +169,7 @@ app.post('/postATIS', cors(cors_opt), (req, res) => {
             )
             .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team');        
 
-        client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids4").send(embed);
+        client.guilds.cache.get(process.env.guild_id).channels.cache.find(channel => channel.name === "ids").send(embed);
 
         res.sendStatus(200);
 
