@@ -4,7 +4,6 @@ const   Discord     = require('discord.js'),
         client      = new Discord.Client(),
         express     = require('express'),
         app         = express(),
-        port        = process.env.port,
         cors        = require('cors'),
         helmet      = require('helmet'),
         bodyParser  = require('body-parser'),
@@ -19,6 +18,8 @@ const   site_token  = process.env.site_token,
             origin  :   site_url,
             optionsSuccessStatus: 200
         };
+
+let     port = process.env.PORT || 5000;
 
 client.on('ready', () => {
   console.log(`Credentials ${client.user.tag}: Sucessfully Logged On.`);
