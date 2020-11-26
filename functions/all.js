@@ -1,15 +1,16 @@
-const Discord = require('discord.js');
-const axios = require('axios');
-const client = new Discord.Client();
+require('dotenv').config({path: '../'});
+const   Discord     = require('discord.js'),
+        axios       = require('axios'),
+        client      = new Discord.Client();
 
 // GETTING: Environment Variables
-const site_token = process.env.site_token;
-const site_url = process.env.site_url;
-const guild_id = process.env.guild_id;
-const FACILITY_ID = process.env.FACILITY_ID;
-const FACILITY_NAME = process.env.FACILITY_NAME;
+const   site_token  = process.env.site_token,
+        site_url    = process.env.site_url,
+        guild_id    = process.env.guild_id,
+        FACILITY_ID = process.env.FACILITY_ID,
+        FACILITY_NAME = process.env.FACILITY_NAME;
 
-// ARRAY: Ratings
+// SETTING: Arrays
 const ratings = [
     'ADM',
     'SUP',
@@ -21,7 +22,13 @@ const ratings = [
     'S2',
     'S1',
     'OBS'
-]
+];
+
+const roles = [
+    'Mutual Visiting Controller',
+    'Visiting Controller',
+    FACILITY_ID + 'Controller'
+];
 
 module.exports = {
     syncroles: async function (discord_id, message, live) {
@@ -102,11 +109,9 @@ module.exports = {
                 ratings.forEach(rating_name => 
                     message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name)));
 
-                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller"));
-                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Visiting Controller"));
-                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller"));
-                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Facility Staff"));
-                message.member.roles.remove(message.guild.roles.cache.find(role => role.name === "Training Staff"));
+                roles.forEach(role_name => {
+                    message.member.roles.remove(message.guild.roles.cache.find(role => role.name === role_name));
+                });
 
                 // Removing (END)
 
@@ -168,7 +173,7 @@ module.exports = {
                                 inline : false
                             },
                         )
-                        .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+                        .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team');
                         // Message (END)
                     }
                 }
@@ -193,7 +198,7 @@ module.exports = {
                         inline : false
                     },
                 )
-                .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+                .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team');
 
                 message.author.send(embed);
                 // Message (END)
@@ -227,7 +232,7 @@ module.exports = {
                     inline : false
                 }
             )
-            .setFooter('Maintained by the v' + FACILITY_ID + ' Data Services Team');
+            .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team');
 
         message.delete().then(() => {
             message.channel.send(embed);
