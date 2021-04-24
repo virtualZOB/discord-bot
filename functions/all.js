@@ -238,5 +238,51 @@ module.exports = {
             message.channel.send(embed);
         });
 
+    }, spontaneous: function(message) {
+        const embed = new Discord.MessageEmbed()
+            .setColor('#2664D8')
+            .setTitle('Spontaneous Training')
+            .setURL(site_url)
+            .addFields(
+                {
+                    name : 'What is Spontaneous Training?',
+                    value : 'Spontaneous Training is a venue for training staff to post any impromptu training availability in this channel. When spontaneous, or ad-hoc, availability is posted, students may message (DM) the training staff that is advertising that block of time. Do note that this source of availability **DOES NOT** guarantee that you will receive training, but instead is offered as a courtesy on behalf of the training staff.',
+                    inline : false
+                },
+                {
+                    name : 'How do I get notified?',
+                    value : 'To be notified of Spontaneous Training availability being posted, react to this message with a 📢.',
+                    inline : false
+                },
+                {
+                    name : 'Note',
+                    value : 'Do not solicit training from training staff who do not post spontaneous training availability in this channel. Although, you may still coordinate times or adhoc training if a training staff is openly able to provide training outside of their hours posted on Setmore. If you have any questions or concerns regarding training reach out to the Training Administrator (TA) or an appropiate member of the training staff.',
+                    inline : false
+                }
+            )
+            .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');
+
+        message.channel.send(embed).then(message => {
+            message.react('📢').catch(err => console.log(err));
+            const collector = message.createReactionCollector(filter, {dispose: true});
+
+            const role = message.guild.roles.cache.find(r => r.name === "Spontaneous Training");
+
+            collector.on('collect', (reaction, user) => {
+                if (user.bot) return;
+
+                message.guild.member(user).roles.add(role).catch(err => console.log(err));
+            });
+
+            collector.on('remove', (reaction, user) => {
+                if (user.bot) return;
+
+                message.guild.member(user).roles.remove(role).catch(err => console.log(err));
+            });
+
+            collector.on('end', collected => { 
+                console.log(`Collected ${collected.size} Reactions.`);
+            });
+        });
     }
 }

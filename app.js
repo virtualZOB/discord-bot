@@ -78,6 +78,15 @@ client.on('message', message => {
             }
         }
 
+        if (command === "spontaneous") {
+            if (message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
+                func.spontaneous(message);
+            } else {
+                message.reply("**Error:** Insufficient Permission.");
+            }
+        }
+
+
     }
 
 });
