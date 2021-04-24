@@ -264,6 +264,11 @@ module.exports = {
 
         message.channel.send(embed).then(message => {
             message.react('📢').catch(err => console.log(err));
+
+            const filter = (reaction) => {
+                return reaction.emoji.name === '📢'
+            }
+
             const collector = message.createReactionCollector(filter, {dispose: true});
 
             const role = message.guild.roles.cache.find(r => r.name === "Spontaneous Training");
