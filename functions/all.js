@@ -264,30 +264,7 @@ module.exports = {
 
         message.channel.send(embed).then(message => {
             message.react('📢').catch(err => console.log(err));
-
-            const filter = (reaction) => {
-                return reaction.emoji.name === '📢'
-            }
-
-            const collector = message.createReactionCollector(filter, {dispose: true});
-
-            const role = message.guild.roles.cache.find(r => r.name === "Spontaneous Training");
-
-            collector.on('collect', (reaction, user) => {
-                if (user.bot) return;
-
-                message.guild.member(user).roles.add(role).catch(err => console.log(err));
-            });
-
-            collector.on('remove', (reaction, user) => {
-                if (user.bot) return;
-
-                message.guild.member(user).roles.remove(role).catch(err => console.log(err));
-            });
-
-            collector.on('end', collected => { 
-                console.log(`Collected ${collected.size} Reactions.`);
-            });
         });
+        
     }
 }

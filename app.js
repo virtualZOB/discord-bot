@@ -1,7 +1,10 @@
 require('dotenv').config();
 const   Discord     = require('discord.js'),
-        fs          = require('fs'),
-        client      = new Discord.Client(),
+        client      = new Discord.Client(
+        {ws: {
+            intents: ['GUILD_MESSAGES', 'GUILDS', 'GUILD_MESSAGE_REACTIONS']
+          },
+          partials: ['USER', 'REACTION', 'MESSAGE']}),
         express     = require('express'),
         app         = express(),
         cors        = require('cors'),
@@ -25,6 +28,31 @@ client.on('ready', () => {
   console.log(`Credentials ${client.user.tag}: Sucessfully Logged On.`);
 });
 
+
+// Reaction Listener (START)
+client.on('messageReactionAdd', (reaction, u) => {
+    if (reaction.emoji.name === '📢') {
+        if (reaction.message.channel.name !== "spontaneous-training") return;
+        if (u.bot) return;
+
+        const role = client.guilds.cache.get(guild_id).roles.cache.find(r => r.name === "Spontaneous Training");
+        const user = client.guilds.cache.get(guild_id).members.cache.get(u.id);
+        user.roles.add(role);
+    }
+});
+
+client.on('messageReactionRemove', (reaction, u) => {
+    if (reaction.emoji.name === '📢') {
+        if (reaction.message.channel.name !== "spontaneous-training") return;
+        if (u.bot) return;
+
+        const role = client.guilds.cache.get(guild_id).roles.cache.find(r => r.name === "Spontaneous Training");
+        const user = client.guilds.cache.get(guild_id).members.cache.get(u.id);
+        user.roles.remove(role);
+    }
+})
+// Reaction Listener (END)
+
 // Functions (START)
 const func = require('./functions/all');
 // Functions (END)
@@ -34,7 +62,7 @@ client.on('guildMemberAdd', (member) => {
 
     member.roles.add(member.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
 
-    // Message (START)
+    // Message (START)`
     const embed = new Discord.MessageEmbed()
     .setColor('#32cd32')
     .setTitle('Welcome to ' + FACILITY_ID)
