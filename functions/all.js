@@ -262,10 +262,11 @@ module.exports = {
             )
             .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');
 
-        message.channel.send(embed).then(message => {
-            message.react('📢').catch(err => console.log(err));
-        });
-        
+        message.delete().then(() => {
+            message.channel.send(embed).then(message => {
+                message.react('📢').catch(err => console.log(err));
+            });
+        });   
     }, spontaneous: function(message, content) {
         if (message.content.includes("l:")) {
             var decoded = content[1].split('l:');
@@ -315,8 +316,11 @@ module.exports = {
             .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');            
         }
 
-        message.channel.send(`${message.guild.roles.cache.find(role => role.name === "Spontaneous Training")}`).then(() => {
-            message.channel.send(embed);
-        })
+        message.delete().then(() => {
+            message.channel.send(`${message.guild.roles.cache.find(role => role.name === "Spontaneous Training")}`).then(() => {
+                message.channel.send(embed);
+            });
+        });
+
     }
 }
