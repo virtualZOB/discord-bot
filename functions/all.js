@@ -238,7 +238,7 @@ module.exports = {
             message.channel.send(embed);
         });
 
-    }, spontaneous: function(message) {
+    }, spontaneous_embed: function(message) {
         const embed = new Discord.MessageEmbed()
             .setColor('#2664D8')
             .setTitle('Spontaneous Training')
@@ -266,5 +266,57 @@ module.exports = {
             message.react('📢').catch(err => console.log(err));
         });
         
+    }, spontaneous: function(message, content) {
+        if (message.content.includes("l:")) {
+            var decoded = content[1].split('l:');
+            var limit = decoded[1];
+        }
+
+        if (limit) {
+            var embed = new Discord.MessageEmbed()
+            .setColor('#FFCC00')
+            .setTitle('Spontaneous Training Available')
+            .setURL(site_url)
+            .addFields(
+                {
+                    name : 'Training Staff',
+                    value : message.author,
+                    inline : false
+                },
+                {
+                    name : 'Date/Time',
+                    value : decoded[0],
+                    inline : false
+                },
+                {
+                    name : 'Not Available For',
+                    value : limit,
+                    inline : false
+                }
+            )
+            .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');
+        } else {
+            var embed = new Discord.MessageEmbed()
+            .setColor('#FFCC00')
+            .setTitle('Spontaneous Training Available')
+            .setURL(site_url)
+            .addFields(
+                {
+                    name : 'Training Staff',
+                    value : message.author,
+                    inline : false
+                },
+                {
+                    name : 'Date/Time',
+                    value : content[1],
+                    inline : false
+                }
+            )
+            .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');            
+        }
+
+        message.channel.send(`${message.guild.roles.cache.find(role => role.name === "Spontaneous Training")}`).then(() => {
+            message.channel.send(embed);
+        })
     }
 }

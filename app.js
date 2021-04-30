@@ -106,11 +106,19 @@ client.on('message', message => {
             }
         }
 
-        if (command === "spontaneous") {
+        if (command === "spontaneous_embed") {
             if (message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
-                func.spontaneous(message);
+                func.spontaneous_embed(message);
             } else {
                 message.reply("**Error:** Insufficient Permission.");
+            }
+        }
+
+        if (command === "spontaneous") {
+            if (message.member.roles.cache.some(role => role.name === "Training Staff")) {
+                func.spontaneous(message, message.content.split(prefix + 'spontaneous'));
+            } else {
+                message.reply("**Error:** Insufficient Permission.")
             }
         }
 
