@@ -250,13 +250,18 @@ module.exports = {
                     inline : false
                 },
                 {
+                    name : 'What happens if I have a session scheduled already?',
+                    value : 'If you had a previous session cancelled and you place interest for Spontaneous Training; your previous session will not be cancelled and you may keep that session at your discretion. Do note that students that do not have a session scheduled may get priority over those that have a session scheduled on Setmore.',
+                    inline : false
+                },
+                {
                     name : 'How do I get notified?',
                     value : 'To be notified of Spontaneous Training availability being posted, react to this message with a 📢.',
                     inline : false
                 },
                 {
                     name : 'Note',
-                    value : 'Do not solicit training from training staff who do not post spontaneous training availability in this channel. Although, you may still coordinate times or adhoc training if a training staff is openly able to provide training outside of their hours posted on Setmore. If you have any questions or concerns regarding training reach out to the Training Administrator (TA) or an appropiate member of the training staff.',
+                    value : 'This is not a venue to encourage soliciting, and we recommend to be respectful when coordinating times with training staff for Spontaneous Training or sessions outside of the normal training schedule available on Setmore. If you have any questions or concerns regarding training reach out to the Training Administrator (TA) or an appropiate member of the training staff.',
                     inline : false
                 }
             )
@@ -290,7 +295,7 @@ module.exports = {
                     inline : false
                 },
                 {
-                    name : 'Not Available For',
+                    name : 'Session Type(s) Unavailable',
                     value : limit,
                     inline : false
                 }
