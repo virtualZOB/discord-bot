@@ -71,7 +71,7 @@ module.exports = {
                     var nickname = name + ' | INS'; 
                 }
 
-                if (user.staff !== 'zzzz') {
+                if (user.staff !== '') {
                     var nickname = name + ' | ' + user.staff;
                 }
 
@@ -96,7 +96,7 @@ module.exports = {
                     var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
                 }
 
-                if (user.staff !== 'zzzz') {
+                if (user.staff !== '') {
                     if (user.staff == "ATM" || user.staff == "DATM" || user.staff == "TA" || user.staff == "ATA") {
                         var staff_role = message.guild.roles.cache.find(role => role.name === "Senior Staff");
                     } else {
