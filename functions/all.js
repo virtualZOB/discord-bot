@@ -96,12 +96,12 @@ module.exports = {
                     var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
                 }
 
-                if (user.staff !== '') {
-                    if (user.staff == "ATM" || user.staff == "DATM" || user.staff == "TA" || user.staff == "ATA") {
-                        var staff_role = message.guild.roles.cache.find(role => role.name === "Senior Staff");
-                    } else {
-                        var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
-                    }
+                if (user.staff === "EC" || user.staff === "WM" || user.staff === "FE" || user.staff === "AEC" || user.staff === "AWM" || user.staff === "AFE") {
+                    var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
+                }
+
+                if (user.staff === "WT" || user.staff === "ET" || user.staff === "FET") {
+                    var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Team Member");
                 }
                 // Roles (END)
 
