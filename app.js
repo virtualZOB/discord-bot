@@ -114,7 +114,7 @@ client.on('message', message => {
             }
         }
 
-        if (command === "spontaneous" || command === "s") {
+        if (command === "spontaneous" || command === "sp") {
             if (message.member.roles.cache.some(role => role.name === "Training Staff")) {
                 func.spontaneous(message, message.content.split(prefix + command));
             } else {
