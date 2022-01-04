@@ -39,11 +39,23 @@ module.exports = {
 
             if (user.status !== "None") {
                 // Setting Values
-                if (user.discord_nick_pref > 0) {
-                    var name = user.first_name;
+                if (user.pref_name == '') {
+                    if (user.discord_nick_pref > 0) {
+                        var name = user.first_name;
+                    } else {
+                        var name = user.first_name + ' ' + user.last_name;
+                    }
                 } else {
-                    var name = user.first_name + ' ' + user.last_name;
+                    var pref_split = user.pref_name.split(' ');
+
+                    if (user.discord_nick_pref > 0) {
+                        var name = pref_split[0];
+                    } else {
+                        var name = pref_split[0] + ' ' + pref_split[1];
+                    }
                 }
+
+
 
                 const type = user.type;
                 const facility = user.facility;
