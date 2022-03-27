@@ -114,9 +114,9 @@ client.on('message', message => {
             }
         }
 
-        if (command === "spontaneous") {
+        if (command === "spontaneous" || command === "sp") {
             if (message.member.roles.cache.some(role => role.name === "Training Staff")) {
-                func.spontaneous(message, message.content.split(prefix + 'spontaneous'));
+                func.spontaneous(message, message.content.split(prefix + command));
             } else {
                 message.reply("**Error:** Insufficient Permission.")
             }
