@@ -322,5 +322,46 @@ module.exports = {
             });
         });
 
+    }, activity: async function(message, client) {
+        var embed = new Discord.MessageEmbed()
+        .setColor('#FF2E2E')
+        .setTitle('Activity Notification')
+        .setURL(site_url)
+        .addFields(
+            {
+                name : 'Reminder of Activity',
+                value : 'Hello! You are receiving this notification as you have yet to fulfill your activity requirements for v' + FACILITY_ID + ' this month! We encourage you to get on position or schedule a training session at the next available time prior to the end of calendar month in order to fulfill your activity requirements. A reminder that we have, on a standard month, at least one or several host or support events that you are able to look forward to this next upcoming month alongside various days of training slot times that you can take advantage of to further your virtual air traffic career. We would hate to lose you as a controller within our facility as each and every member is a vital part of both the air traffic operations and also the community within!',
+                inline : false
+            },
+            {
+                name : 'Minimum Activity Requirement (OBS)',
+                value : 'If you are an Observer (OBS), it is required per 7210.3 to fulfill at least one complete training session each calendar month.',
+                inline : false
+            },
+            {
+                name : 'Minimum Activity Requirement (S1+)',
+                value : 'If you are a Student 1 (S1) rated controller or higher, it is required per 7210.3 to fulfill two hours on a live position each calendar month.',
+                inline : false
+            },
+            {
+                name : 'Leave of Absence',
+                value : 'If you are unable to meet the activity requirements you may request a Leave of Absence (LOA) per 7210.3 3.4. The minimum length for a LOA is 30 days and the maximum length is 90 days. Controllers in active duty military/armed forces will be permitted up to 24 months of LOA for miltary related deployment or duties but they must complete a checkout with the TA or Instructor upon their return.',
+                inline : false
+            }
+        )
+        .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Senior Staff'); 
+
+
+        var formatted = message.content.replace(/ /g, ",");
+
+        const response = await axios.get(site_url + '/api/data/bot/search/?ois=' + formatted.replace("!activity,", "") + '&key=' + site_token);
+           
+        response.data.forEach(data => {
+            if (data !== '') {
+                client.users.fetch(data, false).then((user) => {
+                    user.send(embed);
+                })
+            }
+        });
     }
 }

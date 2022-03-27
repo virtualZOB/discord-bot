@@ -122,6 +122,14 @@ client.on('message', message => {
             }
         }
 
+        if (command === "activity") {
+            if (message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
+                func.activity(message, client);
+            } else {
+                message.reply("**Error:** Insufficient Permission.");
+            }
+        }
+
 
     }
 
