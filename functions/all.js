@@ -25,9 +25,8 @@ const ratings = [
 ];
 
 const roles = [
-    'Mutual Visiting Controller',
     'Visiting Controller',
-    FACILITY_ID + 'Controller'
+    FACILITY_ID + ' Controller'
 ];
 
 module.exports = {
@@ -100,9 +99,7 @@ module.exports = {
                 // Nickname (END)
 
                 // Roles (START)
-                if (type === "loa") {
-                    var prim_role = message.guild.roles.cache.find(role => role.name === "Mutual Visiting Controller");
-                } else if (type === "vis") {
+                if (type === "vis") {
                     var prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
                 } else {
                     var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
@@ -118,12 +115,15 @@ module.exports = {
                 // Roles (END)
 
                 // Removing (START)
-                ratings.forEach(rating_name => 
-                    message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name)));
+                ratings.forEach(rating_name => {
+                    message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name));
+                });
 
                 roles.forEach(role_name => {
                     message.member.roles.remove(message.guild.roles.cache.find(role => role.name === role_name));
                 });
+
+                console.log(roles)
 
                 // Removing (END)
 

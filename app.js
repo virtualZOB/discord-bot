@@ -91,7 +91,12 @@ client.on('message', message => {
         const command = args.shift().toLowerCase();
 
         if (command === "sync") {
-            func.syncroles(message.author.id, message, false);
+            var sync = func.syncroles(message.author.id, message, false);
+            sync.then(function() {
+                // Nothing
+            }).catch(function() {
+                console.log('Promise Rejected')
+            })
         }
 
         if (command === "live") {
