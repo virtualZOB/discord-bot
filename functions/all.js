@@ -173,7 +173,7 @@ module.exports = {
                     });
                     // Removing (END)
 
-                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Pilots"));
+                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Pilot"));
                     message.member.setNickname(nickname);
                 }
 
