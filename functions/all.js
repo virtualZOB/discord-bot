@@ -37,115 +37,145 @@ module.exports = {
             const user = response.data;
 
             if (user.status !== "None") {
-                // Setting Values
-                if (user.pref_name == '') {
-                    if (user.discord_nick_pref > 0) {
-                        var name = user.first_name;
+                if (user.type !== 'lim') {
+                    // HOME or VISITING controller
+
+                    if (user.pref_name == '') {
+                        if (user.discord_nick_pref > 0) {
+                            var name = user.first_name;
+                        } else {
+                            var name = user.first_name + ' ' + user.last_name;
+                        }
                     } else {
+                        var pref_split = user.pref_name.split(' ');
+
+                        if (user.discord_nick_pref > 0) {
+                            var name = pref_split[0];
+                        } else {
+                            var name = pref_split[0] + ' ' + pref_split[1];
+                        }
+                    }
+
+                    const type = user.type;
+                    const facility = user.facility;
+
+                    // Nickname (START)
+                    if (type === "loa") {
+                        var nickname = name + ' | ' + facility; 
+                    } else {
+                        var nickname = name + ' | ' + user.initials;
+                    }
+
+                    if (user.facility === 'ZHQ') {
+                        var nickname = name + ' | VATUSA#'; 
+                    }
+
+                    if (user.rating === 'ADM') {
+                        var nickname = name + ' | VAT???#'; 
+                    }
+                    
+                    if (user.mentor == 'Yes') {
+                        var nickname = name + ' | MTR'; 
+                    }
+
+                    if (user.ins == 'Yes') {
+                        var nickname = name + ' | INS'; 
+                    }
+
+                    if (user.staff !== '') {
+                        var nickname = name + ' | ' + user.staff;
+                    }
+
+                    // LIVE Functionality (S)
+                    if (live === true) {
+                        if (message.member.displayName.includes('LIVE') == true) {
+                            // Do Nothing
+                        } else {
+                            var nickname = name + ' | LIVE';
+                        }
+                    }
+                    // LF (E)
+
+                    // Nickname (END)
+
+                    // Roles (START)
+                    if (type === "vis") {
+                        var prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
+                    } else {
+                        var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
+                    }
+
+                    if (user.staff === "EC" || user.staff === "WM" || user.staff === "FE" || user.staff === "AEC" || user.staff === "AWM" || user.staff === "AFE") {
+                        var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
+                    }
+
+                    if (user.staff === "WT" || user.staff === "ET" || user.staff === "FET") {
+                        var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Team Member");
+                    }
+                    // Roles (END)
+
+                    // Removing (START)
+                    ratings.forEach(rating_name => {
+                        message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name));
+                    });
+
+                    roles.forEach(role_name => {
+                        message.member.roles.remove(message.guild.roles.cache.find(role => role.name === role_name));
+                    });
+                    // Removing (END)
+
+                    // Assigning (START)
+                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
+                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === user.rating));
+                    message.member.roles.add(prim_role);
+
+                    if (staff_role) {
+                        message.member.roles.add(staff_role);
+                    }
+
+                    if (user.mentor == 'Yes' || user.ins == 'Yes') {
+                        message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Training Staff"));
+                    }
+
+                    if (user.facility === 'ZHQ' || user.rating === 'ADM') {
+                        message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM/VATUSA Staff"));
+                    }
+
+                    message.member.setNickname(nickname);
+                    // Assigning (END)
+                } else {
+                    // LIMITED controller
+                    if (user.pref_name == '') {
                         var name = user.first_name + ' ' + user.last_name;
-                    }
-                } else {
-                    var pref_split = user.pref_name.split(' ');
-
-                    if (user.discord_nick_pref > 0) {
-                        var name = pref_split[0];
                     } else {
-                        var name = pref_split[0] + ' ' + pref_split[1];
+                        var name = user.pref_name;
                     }
-                }
 
-
-
-                const type = user.type;
-                const facility = user.facility;
-
-                // Nickname (START)
-                if (type === "loa") {
-                    var nickname = name + ' | ' + facility; 
-                } else {
-                    var nickname = name + ' | ' + user.initials;
-                }
-
-                if (user.facility === 'ZHQ') {
-                    var nickname = name + ' | VATUSA#'; 
-                }
-
-                if (user.rating === 'ADM') {
-                    var nickname = name + ' | VAT???#'; 
-                }
-                
-                if (user.mentor == 'Yes') {
-                    var nickname = name + ' | MTR'; 
-                }
-
-                if (user.ins == 'Yes') {
-                    var nickname = name + ' | INS'; 
-                }
-
-                if (user.staff !== '') {
-                    var nickname = name + ' | ' + user.staff;
-                }
-
-                // LIVE Functionality (S)
-                if (live === true) {
-                    if (message.member.displayName.includes('LIVE') == true) {
-                        // Do Nothing
+                    // LIVE Functionality (S)
+                    if (live === true) {
+                        if (message.member.displayName.includes('LIVE') == true) {
+                            // Do Nothing
+                        } else {
+                            var nickname = name + ' | LIVE';
+                        }
                     } else {
-                        var nickname = name + ' | LIVE';
+                        var nickname = name;
                     }
+                    // LF (E)
+
+                    // Removing (START)
+                    ratings.forEach(rating_name => {
+                        message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name));
+                    });
+
+                    roles.forEach(role_name => {
+                        message.member.roles.remove(message.guild.roles.cache.find(role => role.name === role_name));
+                    });
+                    // Removing (END)
+
+                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Pilots"));
+                    message.member.setNickname(nickname);
                 }
-                // LF (E)
-
-                // Nickname (END)
-
-                // Roles (START)
-                if (type === "vis") {
-                    var prim_role = message.guild.roles.cache.find(role => role.name === "Visiting Controller");
-                } else {
-                    var prim_role = message.guild.roles.cache.find(role => role.name === FACILITY_ID + " Controller");
-                }
-
-                if (user.staff === "EC" || user.staff === "WM" || user.staff === "FE" || user.staff === "AEC" || user.staff === "AWM" || user.staff === "AFE") {
-                    var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Staff");
-                }
-
-                if (user.staff === "WT" || user.staff === "ET" || user.staff === "FET") {
-                    var staff_role = message.guild.roles.cache.find(role => role.name === "Facility Team Member");
-                }
-                // Roles (END)
-
-                // Removing (START)
-                ratings.forEach(rating_name => {
-                    message.member.roles.remove(message.guild.roles.cache.find(role => role.name === rating_name));
-                });
-
-                roles.forEach(role_name => {
-                    message.member.roles.remove(message.guild.roles.cache.find(role => role.name === role_name));
-                });
-
-                console.log(roles)
-
-                // Removing (END)
-
-                // Assigning (START)
-                message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM Controller"));
-                message.member.roles.add(message.guild.roles.cache.find(role => role.name === user.rating));
-                message.member.roles.add(prim_role);
-
-                if (staff_role) {
-                    message.member.roles.add(staff_role);
-                }
-
-                if (user.mentor == 'Yes' || user.ins == 'Yes') {
-                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "Training Staff"));
-                }
-
-                if (user.facility === 'ZHQ' || user.rating === 'ADM') {
-                    message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM/VATUSA Staff"));
-                }
-
-                message.member.setNickname(nickname);
-                // Assigning (END)
 
                 message.delete();
 
@@ -158,7 +188,7 @@ module.exports = {
                     .addFields(
                         {
                             name : 'Successfully Synced Roles',
-                            value : 'Thank you for joining the Virtual ' + FACILITY_NAME + '. Your roles & nickname have been synced according to our ARTCC site.',
+                            value : 'Thank you for joining the Virtual ' + FACILITY_NAME + ' Discord. Your roles & nickname have been synced according to our ARTCC site.',
                             inline : false
                         },
                     )
@@ -180,7 +210,7 @@ module.exports = {
                                 inline : false
                             },
                             {
-                                name : 'Un-Set Nickname',
+                                name : 'Reset Nickname',
                                 value : 'Once you have finished your streaming, and all of your content is to prestine quality and your audience is contempt you may reset your nickname by re-sending this command (**!live**). Happy Controlling!',
                                 inline : false
                             },
