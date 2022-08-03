@@ -370,6 +370,7 @@ module.exports = {
         });
 
     }, activity: async function(message, client) {
+        var count = 0;
         var embed = new Discord.MessageEmbed()
         .setColor('#FF2E2E')
         .setTitle('Activity Notification')
@@ -408,7 +409,32 @@ module.exports = {
                 client.users.fetch(data, false).then((user) => {
                     user.send(embed);
                 })
+
+                count++;
             }
         });
+
+        message.reply(`sent ${count} activity message(s).`)
+    }, removeroles: async function(message, client) {
+        var count = 0;
+        var formatted = message.content.replace(/ /g, ",");
+
+        const response = await axios.get(site_url + '/api/data/bot/search/?ois=' + formatted.replace("!removeroles,", "") + '&key=' + site_token);
+
+        let guild = client.guilds.cache.get(guild_id);
+           
+        response.data.forEach(data => {
+            if (data !== '') {
+                guild.members.fetch(data, false).then((user) => {
+                    user.roles.remove(guild.roles.cache.find(role => role.name === "ZOB Controller"))
+                    user.roles.remove(guild.roles.cache.find(role => role.name === "Visiting Controller"))
+                    user.roles.remove(guild.roles.cache.find(role => role.name === "Spontaneous Training"))
+                })
+
+                count++;
+            }
+        });
+
+        message.reply(`removed ${count} role(s).`)
     }
 }

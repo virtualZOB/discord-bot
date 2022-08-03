@@ -135,6 +135,13 @@ client.on('message', message => {
             }
         }
 
+        if (command === "removeroles") {
+            if (message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
+                func.removeroles(message, client);
+            } else {
+                message.reply("**Error:** Insufficient Permission.");
+            }
+        }
 
     }
 
