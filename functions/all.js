@@ -254,18 +254,18 @@ module.exports = {
     },
     welcomeMessage: function(message) {
         const embed = new Discord.MessageEmbed()
-            .setColor('#32cd32')
+            .setColor('#ADD8E6')
             .setTitle('Welcome to ' + FACILITY_ID)
             .setURL(site_url)
             .addFields(
                 {
                     name : 'Introduction',
-                    value : 'Welcome to the Virtual ' + FACILITY_NAME + ' Official Discord Server; the primary communication method for all means regarding the ARTCC. If you are new to the Discord please keep in mind that all means of communications either voice or text are covered under the VATSIM Code of Conduct, and all rules are applicable in thie Discord server. We want to ensure a safe community and a great experience for our controllers to properly communicate, coordinate, navigate, and educate.',
+                    value : 'Welcome to the Virtual ' + FACILITY_NAME + ' Official Discord Server; the primary communication method for all means regarding the ARTCC. If you are new to the Discord please keep in mind that all means of communications either voice or text are covered under the VATSIM Code of Conduct and the VATSIM Cleveland ARTCC Discord Policy. We want to ensure a safe community and a great experience for our pilots, controllers, and staff to properly communicate, coordinate, navigate, and educate.',
                     inline : false
                 },
                 {
                     name : 'Linking Your Site Account',
-                    value : 'The Virtual ' + FACILITY_NAME + ' utilizes this Discord Bot, and our facility website (' + site_url + ') to seamlessy and efficiently link the two systems together and provide roles and information effectively to all controllers whether they are home, visiting, or mutual visiting. If you have not already linked your account please navigate to our site and login, and navigate to your "Profile" to link your Discord account to the site.',
+                    value : 'The Virtual ' + FACILITY_NAME + ' utilizes this Discord Bot, and our facility website (' + site_url + ') to seamlessy and efficiently link the two systems together and provide roles and information effectively to all pilots and home/visiting controllers. If you have not already linked your account please navigate to our site and login, navigating to your "Profile" to link your Discord account to the site; or if not a rostered controller (i.e. pilot): the "Discord" button under your name in the navigation bar.',
                     inline : false
                 },
                 {
