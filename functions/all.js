@@ -26,7 +26,8 @@ const ratings = [
 
 const roles = [
     'Visiting Controller',
-    FACILITY_ID + ' Controller'
+    FACILITY_ID + ' Controller',
+    'Pilot'
 ];
 
 module.exports = {
