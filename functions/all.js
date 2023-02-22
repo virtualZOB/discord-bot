@@ -289,24 +289,34 @@ module.exports = {
             .addFields(
                 {
                     name : 'What is Spontaneous Training?',
-                    value : 'Spontaneous Training is a venue for training staff to post any impromptu training availability in this channel. When spontaneous, or ad-hoc, availability is posted, students may message (DM) the training staff that is advertising that block of time. Do note that this source of availability **DOES NOT** guarantee that you will receive training, but instead is offered as a courtesy on behalf of the training staff.',
+                    value : 'Spontaneous Training is a venue for both students and training staff to post impromptu training availability in this channel. Do note that this source of availability **DOES NOT** guarantee that you will receive training, but instead is offered as a courtesy on behalf of the training staff. You MUST follow the rules listed below to use this system.',
                     inline : false
                 },
                 {
                     name : 'What happens if I have a session scheduled already?',
-                    value : 'If you had a previous session cancelled and you place interest for Spontaneous Training; your previous session will not be cancelled and you may keep that session at your discretion. Do note that students that do not have a session scheduled may get priority over those that have a session scheduled on Setmore.',
+                    value : 'If you already have a session scheduled and you place interest for Spontaneous Training, your previous session will not be canceled and you may keep that session at your discretion. Do note that students that do not have a session scheduled may get priority over those that have a session scheduled on setmore.',
                     inline : false
                 },
                 {
                     name : 'How do I get notified?',
-                    value : 'To be notified of Spontaneous Training availability being posted, react to this message with a 📢.',
+                    value : 'To be notified of Spontaneous Training availability being posted by training staff, react to this message with a 📢.',
                     inline : false
                 },
                 {
                     name : 'Note',
-                    value : 'This is not a venue to encourage soliciting, and we recommend to be respectful when coordinating times with training staff for Spontaneous Training or sessions outside of the normal training schedule available on Setmore. If you have any questions or concerns regarding training reach out to the Training Administrator (TA) or an appropiate member of the training staff.',
+                    value : 'This is not a venue to encourage soliciting, and we recommend being respectful when coordinating times with training staff for Spontaneous Training or sessions outside of the normal training schedule available on Setmore. If you have any questions or concerns regarding training, reach out to the Training Administrator (TA) or an appropriate member of the training staff.',
                     inline : false
-                }
+                },
+				{
+					name : 'Rules',
+					value : '1.You must be prepared for your session. If you come to a spontaneous training session unprepared, it may result in the loss of privileges to use this system.\n2.**You must be prepared for an immediate start within the availability window that you provide. If you are not ready to start when contacted by a training staff member, your request will be deleted.**\n3.Your availability window must be within 6 hours of your posting and you may not post future availability. Availability must only be posted when you are free.\n4.Do not direct message or tag training staff members unless they reach out to you or have posted their own availability in this channel.\n5.Requests should be made in **Eastern** time.\n6.Messages will be deleted at the end of the day.\n7.There is **NO GUARANTEE** that your request will be picked up. Training staff are all volunteers and will get to your request if they can.',
+					inline : false
+				},
+				{
+					name : 'Example Formate for Requests',
+					value : 'Requesting Session: ITG-1\nAvailability Window: 3pm Eastern to 9pm Eastern',
+					inline : false
+				}
             )
             .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');
 
