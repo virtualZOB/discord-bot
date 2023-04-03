@@ -151,6 +151,14 @@ client.on('message', message => {
             }
         }
 
+        if (command === "trainingrequest" || command === "treq"){
+            if (message.member.roles.cache.some(role => role.name === "ZOB Controller")) {
+                func.trainingresquest(message, message.content.split(prefix + command));
+            } else {
+                message.reply("**Error:** Insufficient Permission.")
+            }
+        }
+
         if (command === "activity") {
             if (message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
                 func.activity(message, client);

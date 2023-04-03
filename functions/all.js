@@ -30,6 +30,8 @@ const roles = [
     'Pilot'
 ];
 
+const DELAYINMILLISEC = 43200000; //24 hrs
+
 module.exports = {
     syncroles: async function (discord_id, message, live) {
         try {
@@ -313,10 +315,10 @@ module.exports = {
 					inline : false
 				},
 				{
-					name : 'Example Format for Requests',
-					value : 'Requesting Session: ITG-1\nAvailability Window: 3pm Eastern to 9pm Eastern',
+					name : 'Command for Training Requests',
+					value : '!treq [Type of Session] t: [Availability Window]\n\nExample: !treq ITG-1 t: 3pm Eastern to 9pm Eastern',
 					inline : false
-				}
+				},
             )
             .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');
 
@@ -380,7 +382,40 @@ module.exports = {
             });
         });
 
-    }, activity: async function(message, client) {
+    }, trainingresquest: function(message, content){
+        if (message.content.includes("t:")) {
+            var decoded = content[1].split('t:');
+            var time = decoded[1];
+        }
+        var embed = new Discord.MessageEmbed()
+        .setColor('#FFCC00')
+        .setTitle('Spontaneous Training Request')
+        .setURL(site_url)
+        .addFields(
+            {
+                name : 'Session Type',
+                value : decoded[0],
+                inline : false
+            },
+            {
+                name : 'Date/Time',
+                value : time,
+                inline : false
+            }
+        )
+        .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team and Training Department');            
+
+        message.delete().then(() => {
+            //message.channel.send(`${message.guild.roles.cache.find(role => role.name === "Training Staff")}`).then(() => {
+                message.channel.send(embed).then((msg) => {
+                    setTimeout(() => {
+                        msg.delete();
+                    },DELAYINMILLISEC);
+            });
+        //});
+        },DELAYINMILLISEC);
+
+    },activity: async function(message, client) {
         var count = 0;
         var embed = new Discord.MessageEmbed()
         .setColor('#FF2E2E')
