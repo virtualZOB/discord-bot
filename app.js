@@ -1,3 +1,5 @@
+console.log(`Start app.js`);
+
 require('dotenv').config();
 const   Discord     = require('discord.js'),
         client      = new Discord.Client(
@@ -21,7 +23,6 @@ const   site_token  = process.env.site_token,
             origin  :   site_url,
             optionsSuccessStatus: 200
         };
-
 let     port = process.env.PORT || 5000;
 
 client.on('ready', () => {
@@ -35,9 +36,21 @@ client.on('messageReactionAdd', (reaction, u) => {
         if (reaction.message.channel.name !== "spontaneous-training") return;
         if (u.bot) return;
 
+
+            // Get the guild and member objects
+        //const guild = reaction.message.guild; //get server
+        //const user = guild.members.fetch(u.id); // get user from server
         const role = client.guilds.cache.get(guild_id).roles.cache.find(r => r.name === "Spontaneous Training");
+        //const role = guild.roles.cache.find(role => role.name === 'Spontaneous Training');
         const user = client.guilds.cache.get(guild_id).members.cache.get(u.id);
-        user.roles.add(role);
+        //const user = u.id;
+        try{
+            if (role){
+                user.roles.add(role);
+            }
+        }catch(error){
+            console.error(`Error adding role: ${error}`);
+        }
     }
 });
 
@@ -46,9 +59,20 @@ client.on('messageReactionRemove', (reaction, u) => {
         if (reaction.message.channel.name !== "spontaneous-training") return;
         if (u.bot) return;
 
-        const role = client.guilds.cache.get(guild_id).roles.cache.find(r => r.name === "Spontaneous Training");
-        const user = client.guilds.cache.get(guild_id).members.cache.get(u.id);
-        user.roles.remove(role);
+            // Get the guild and member objects
+            //const guild = reaction.message.guild; //get server
+            //const user = guild.members.fetch(u.id); // get user from server
+            const role = client.guilds.cache.get(guild_id).roles.cache.find(r => r.name === "Spontaneous Training");
+            //const role = guild.roles.cache.find(role => role.name === 'Spontaneous Training');
+            const user = client.guilds.cache.get(guild_id).members.cache.get(u.id);
+            //const user = u.id;
+            try{
+                if (role){
+                    user.roles.remove(role);
+                }
+            }catch(error){
+                console.error(`Error removing role: ${error}`);
+            }
     }
 })
 // Reaction Listener (END)

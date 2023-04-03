@@ -34,7 +34,7 @@ module.exports = {
     syncroles: async function (discord_id, message, live) {
         try {
             const response = await axios.get(site_url + '/api/data/bot/?discord_id=' + discord_id + '&key=' + site_token);
-           
+
             const user = response.data;
 
             if (user.status !== "None") {
@@ -313,7 +313,7 @@ module.exports = {
 					inline : false
 				},
 				{
-					name : 'Example Formate for Requests',
+					name : 'Example Format for Requests',
 					value : 'Requesting Session: ITG-1\nAvailability Window: 3pm Eastern to 9pm Eastern',
 					inline : false
 				}
