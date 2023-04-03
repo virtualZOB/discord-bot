@@ -394,7 +394,7 @@ module.exports = {
         .addFields(
             {
                 name : 'Student',
-                value : message.autho,
+                value : message.author,
                 inline : false
             },
             {
