@@ -393,6 +393,11 @@ module.exports = {
         .setURL(site_url)
         .addFields(
             {
+                name : 'Student',
+                value : message.autho,
+                inline : false
+            },
+            {
                 name : 'Session Type',
                 value : decoded[0],
                 inline : false
