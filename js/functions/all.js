@@ -143,7 +143,6 @@ module.exports = {
                     if (user.facility === 'ZHQ' || user.rating === 'ADM') {
                         message.member.roles.add(message.guild.roles.cache.find(role => role.name === "VATSIM/VATUSA Staff"));
                     }
-
                     message.member.setNickname(nickname);
                     // Assigning (END)
                 } else {
@@ -487,5 +486,53 @@ module.exports = {
         });
 
         message.reply(`removed ${count} role(s).`)
+    }, addevent: async function(user, content){
+        const event_id = content[1]
+        //fetch event info from website
+        const response = await axios.get(site_url + '/api/data/bot/event.php?event_id=' + event_id + '&key=' + site_token);
+        const event = response.data;
+        
+        if(event.status != 'None'){
+            // create event
+            
+        }
+        else{
+            // event id not found, return error
+            message.delete();
+
+            // Message (START)
+            const embed = new Discord.MessageEmbed()
+            .setColor('#f70d1a')
+            .setTitle('Unexpected Error')
+            .setURL(site_url)
+            .addFields(
+                {
+                    name : 'Error',
+                    value : 'Could not find the event. Please check the event ID is correct',
+                    inline : false
+                },
+            )
+            .setFooter('Maintained by the v' + FACILITY_ID + ' Web Services Team');
+
+            user.send(embed);
+            // Message (END)
+        }
+
+    }, updateevent: async function(user, message){
+        // TODO
+    }, debugMSG: async function(user, message) {
+        const embed = new Discord.MessageEmbed()
+        .setColor('#f70d1a')
+        .setTitle('DEBUG Message')
+        .setURL(site_url)
+        .addFields(
+            {
+                name : 'Message',
+                value : message,
+                inline : false
+            },
+        )
+        user.send(embed);
+    
     }
 }

@@ -13,7 +13,11 @@ const   Discord     = require('discord.js'),
         helmet      = require('helmet'),
         bodyParser  = require('body-parser'),
         prefix      = process.env.prefix;
-
+/*
+const   Discord14 = require('discord.js14');
+        client2      = new Discord14.Client(
+            { intents: [GatewayIntentBits.Guilds] });
+*/ 
 const   site_token  = process.env.site_token,
         site_url    = process.env.site_url,
         guild_id    = process.env.guild_id,
@@ -27,9 +31,16 @@ let     port = process.env.PORT || 5000;
 
 client.on('ready', () => {
   console.log(`Credentials ${client.user.tag}: Sucessfully Logged On.`);
+  console.log('Discord.js Version:');
+  console.log(Discord.version);
 });
-
-
+/*
+client2.on('ready', () => {
+    console.log(`Credentials ${client2.user.tag}: Sucessfully Logged On.`);
+    console.log('Discord.js14 Version:');
+    console.log(Discord14.version);
+  });
+*/
 // Reaction Listener (START)
 client.on('messageReactionAdd', (reaction, u) => {
     if (reaction.emoji.name === '📢') {
@@ -123,6 +134,29 @@ client.on('message', message => {
             })
         }
 
+        if (command === "idsync") {
+            if (message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
+                var content = message.content.split(prefix + command)
+                try{
+                    const member = message.guild.members.fetch(content[1]);
+                    member.send("Hello!");
+                    /*
+                    var sync = func.syncroles(content[1], message, false);
+                    sync.then(function() {
+                        message.author.send("Success!")
+                    }).catch(function() {
+                        console.log('Promise Rejected');
+                    })
+                    */
+                    //message.channel.send('Member Found!');
+                }catch (error){
+                    message.channel.send('Error fetching member');
+                }
+            } else {
+                message.reply("**Error:** Insufficient Permission.");
+            }
+        }
+
         if (command === "live") {
             func.syncroles(message.author.id, message, true);
         }
@@ -175,13 +209,42 @@ client.on('message', message => {
             }
         }
 
+        if (command === "debugmsg"){
+
+            if (message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
+                var content = message.content.split(prefix + command);
+                func.debugMSG(message.author,content[1]);
+                message.delete();
+            } else {
+                message.reply("**Error:** Insufficient Permission.");
+            }
+
+        }
+
+        if (command === "addevent"){
+            if (message.member.roles.cache.some(role => role.name === 'Facility Staff') || message.member.roles.cache.some(role => role.name === 'Senior Staff')) {
+                var content = message.content.split(prefix + command);
+                func.addevent(message.author,message.content.split(prefix + command));
+                message.delete();
+            } else {
+                message.reply("**Error:** Insufficient Permission.");
+            }
+        }
+
     }
 
 });
 
 // Message Listener (END)
 
+// Listeing to the voiceStateUpdate event
+client.on("voiceStateUpdate", (oldMember, newMember)=> { 
+    console.log('in event voiceStateUpdate');
+});
+
+// Discord bot login
 client.login(process.env.token);
+//client2.login(process.env.token);
 
 // Express (START)
 app.use(helmet()).options('*', cors(cors_opt));
