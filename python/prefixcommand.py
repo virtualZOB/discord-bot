@@ -381,21 +381,21 @@ async def waitlist(guild):
         # create embed msg
         if (counts['visit'] and counts['loa']):
             embed = discord.Embed(colour=0x2664D8, title='Bi-Daily Waitlist Information', url=site_url[0])
-            embed.add_field(name='Visitor Request',
-                        value=f"{counts['visit']} Waiting to be Processed",
+            embed.add_field(name='Visitor Apllication',
+                        value=f"{counts['visit']} Pending Visitor Apllication(s)",
                         inline=False)
             embed.add_field(name='LOA Request',
-                        value=f"{counts['loa']} Waiting to be Processed",
+                        value=f"{counts['loa']} Pending LOA Request(s)",
                         inline=False)
         elif(counts['visit']):
             embed = discord.Embed(colour=0x2664D8, title='Waitlist Information', url=site_url[0])
-            embed.add_field(name='Visitor Request',
-                        value=f"{counts['visit']} Waiting to be Processed",
+            embed.add_field(name='Visitor Apllication',
+                        value=f"{counts['visit']} Pending Visitor Apllication(s)",
                         inline=False)
         elif(counts['loa']):
             embed = discord.Embed(colour=0x2664D8, title='Waitlist Information', url=site_url[0])
             embed.add_field(name='LOA Request',
-                        value=f"{counts['loa']} Waiting to be Processed",
+                        value=f"{counts['loa']} Pending LOA Request(s)",
                         inline=False)
         else:
             return
