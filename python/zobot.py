@@ -1,6 +1,7 @@
 import discord
 import configparser
 from prefixcommand import *
+import time
 
 # load KEYs from file
 configname = 'DEFAULT'
@@ -17,6 +18,7 @@ guild_id        = config['guild_id'],
 FACILITY_ID     = config['prefix'],
 FACILITY_NAME   = config['prefix'],
 SP_Channel_ID   = config['SP_Channel_ID']
+SNR_Channel_ID  = config['SNR_Channel_ID']
 
 guild = []
 SENIOR_STAFF    = []
@@ -32,6 +34,7 @@ print(prefix)
 '''
 
 class MyClient(discord.Client):
+    t_start = time.time()
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
         # Initialize Golbal Variables
@@ -40,6 +43,7 @@ class MyClient(discord.Client):
         SENIOR_STAFF    =  discord.utils.get(guild.roles,name="Senior Staff")
         FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
         TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
+        
 
     async def on_member_join(member):
         await syncroles(member, guild) # try to syncrole on member join
@@ -53,6 +57,10 @@ class MyClient(discord.Client):
             await user.remove_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
 
     async def on_message(self, message): # all reaction from message
+        if((time.time()-self.t_start)>43200):
+            self.t_start = time.time()
+            await waitlist(guild)
+
         if (message.content.startswith(prefix)):
             noCommand = True
             content = message.content[1:].lower().split(' ')
@@ -89,6 +97,9 @@ class MyClient(discord.Client):
                 elif(command == "addevent"):
                     await addEvent(message,guild)
                     noCommand = False
+                elif(command == "waitlist"):
+                    await waitlist(guild)
+                    noCommand = False
             if (SENIOR_STAFF in message.author.roles):
                 if(command == "activity"):
                     await activity(message,guild)
@@ -109,6 +120,7 @@ class MyClient(discord.Client):
             await member.remove_roles(act_role)
         elif(after.channel.category.name == 'Controlling Floor'):
             await member.add_roles(act_role)
+            
 
 def main():
 
@@ -125,6 +137,7 @@ def main():
     '''
     client = MyClient(intents=intents)
     client.run(discord_token)
+
 
 
 if __name__=='__main__':

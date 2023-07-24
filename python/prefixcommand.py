@@ -3,7 +3,7 @@ import configparser
 import discord
 from datetime import datetime
 import requests
-import base64
+from discord.ext import tasks, commands
 
 configname = 'DEFAULT'
 configs = configparser.ConfigParser()
@@ -17,7 +17,8 @@ site_url        = config['site_url'],
 guild_id        = config['guild_id'],
 FACILITY_ID     = config['FACILITY_ID'],
 FACILITY_NAME   = config['FACILITY_NAME'],
-SP_Channel_ID   = config['SP_Channel_ID']
+SP_Channel_ID   = config['SP_Channel_ID'],
+SNR_Channel_ID  = config['SNR_Channel_ID']
 
 async def syncroles(user, guild , live = False):
     query = site_url[0]+'/api/data/bot/?discord_id='+str(user.id)
@@ -368,3 +369,34 @@ async def debugMsg(message):
                 inline=False)
     await message.author.send(embed = embed)
     return
+
+
+async def waitlist(guild):
+        channel = await guild.fetch_channel(int(SNR_Channel_ID))
+
+        # fetch count info
+        query = site_url[0]+'/api/data/bot/vis_loa.php?'
+        counts = webQuery(query,site_token[0])
+
+        # create embed msg
+        if (counts['visit'] and counts['loa']):
+            embed = discord.Embed(colour=0x2664D8, title='Bi-Daily Waitlist Information', url=site_url[0])
+            embed.add_field(name='Visitor Request',
+                        value=f"{counts['visit']} Waiting to be Processed",
+                        inline=False)
+            embed.add_field(name='LOA Request',
+                        value=f"{counts['loa']} Waiting to be Processed",
+                        inline=False)
+        elif(counts['visit']):
+            embed = discord.Embed(colour=0x2664D8, title='Waitlist Information', url=site_url[0])
+            embed.add_field(name='Visitor Request',
+                        value=f"{counts['visit']} Waiting to be Processed",
+                        inline=False)
+        elif(counts['loa']):
+            embed = discord.Embed(colour=0x2664D8, title='Waitlist Information', url=site_url[0])
+            embed.add_field(name='LOA Request',
+                        value=f"{counts['loa']} Waiting to be Processed",
+                        inline=False)
+        else:
+            return
+        await channel.send(embed = embed)
