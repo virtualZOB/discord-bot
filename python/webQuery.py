@@ -10,7 +10,7 @@ def webQuery(url,key):
     return data
 
 def main():
-    event = webQuery('https://clevelandcenter.org/api/data/bot/vis_loa.php?','2552674032qiogjioarhio98550468311756938450abc')
+    event = webQuery('https://clevelandcenter.org/api/data/bot/test.php?','2552674032qiogjioarhio98550468311756938450abc')
     print(event)
 if __name__=='__main__':
     main()

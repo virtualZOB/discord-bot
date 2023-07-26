@@ -11,14 +11,14 @@ config = configs[configname]
 print("Config Loaded")
 
 prefix          = config['prefix']
-site_token      = config['site_token'],
+site_token      = config['site_token']
 discord_token   = config['token']
-site_url        = config['site_url'],
-guild_id        = config['guild_id'],
-FACILITY_ID     = config['prefix'],
-FACILITY_NAME   = config['prefix'],
-SP_Channel_ID   = config['SP_Channel_ID']
-SNR_Channel_ID  = config['SNR_Channel_ID']
+site_url        = config['site_url']
+guild_id        = int(config['guild_id'])
+FACILITY_ID     = config['prefix']
+FACILITY_NAME   = config['prefix']
+SP_Channel_ID   = int(config['SP_Channel_ID'])
+SNR_Channel_ID  = int(config['SNR_Channel_ID'])
 
 guild = []
 SENIOR_STAFF    = []
@@ -39,11 +39,10 @@ class MyClient(discord.Client):
         print(f'Logged on as {self.user}!')
         # Initialize Golbal Variables
         global guild,SENIOR_STAFF,FACILITY_STAFF,TRAINING_STAFF
-        guild = await self.fetch_guild(int(guild_id[0]))
+        guild = await self.fetch_guild(guild_id)
         SENIOR_STAFF    =  discord.utils.get(guild.roles,name="Senior Staff")
         FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
         TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
-        
 
     async def on_member_join(member):
         await syncroles(member, guild) # try to syncrole on member join
