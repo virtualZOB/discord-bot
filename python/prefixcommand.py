@@ -1,7 +1,7 @@
 from webQuery import webQuery
 import configparser
 import discord
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 from discord.ext import tasks, commands
 
@@ -23,7 +23,7 @@ SNR_Channel_ID  = int(config['SNR_Channel_ID'])
 async def syncroles(user, guild , live = False):
     query = site_url+'/api/data/bot/?discord_id='+str(user.id)
     try:
-        usrdata = webQuery(query,site_token[0])
+        usrdata = webQuery(query,site_token)
         if (not usrdata['status']=='None'): #Successfully query data from website
             name = str()
             fullname = str()
@@ -202,7 +202,6 @@ async def spontaneous_embed(message):
     await msg.add_reaction('📢')
     return
 async def spontaneous(message,command,guild):
-    print(SP_Channel_ID)
     if (message.channel.id == SP_Channel_ID):
         content = message.content.replace(prefix+command,"")
         limit = []
@@ -282,7 +281,7 @@ async def trainingRequest(message,command,guild):
                 inline=False
             )
             embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
-            await message.channel.send(embed = embed, delete_after=864000) #auto delete after 24 hrs
+            await message.channel.send(embed = embed, delete_after=432000) #auto delete after 12 hrs
         else:
             await message.author.send('**ERROR**\n Missing Parameter')
     else:
@@ -307,7 +306,7 @@ async def activity(message,client):
     
     query = message.content.replace(prefix+'activity ',"")
     query = query.replace(" ",",")
-    users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token[0])
+    users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token)
     for usrid in users:
         if (usrid):
             user = await client.fetch_member(usrid)
@@ -324,7 +323,7 @@ async def removeroles(message,guild):
     count = 0
     query = message.content.replace(prefix+'removeroles ',"")
     query = query.replace(" ",",")
-    users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token[0])
+    users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token)
     for usrid in users:
         if (usrid):
             user = await guild.fetch_member(usrid)
@@ -341,10 +340,16 @@ async def removeroles(message,guild):
 async def addEvent(message,guild):
     eventid = message.content.lower().replace(prefix+'addevent ',"")
     query = site_url+'/api/data/bot/event.php?event_id='+str(eventid)
-    event = webQuery(query,site_token[0])
+    event = webQuery(query,site_token)
     if (not event['id']=='None'):
         startTime = datetime.strptime(event['event_date']+' '+event['time_start'] + ' +0000','%Y-%m-%d %H%M %z')
         endTime = datetime.strptime(event['event_date']+' '+event['time_end'] + ' +0000','%Y-%m-%d %H%M %z')
+
+        if(endTime<startTime):
+            endTime += timedelta(days=1)
+
+        if(len(event['description'])>1000):
+            event['description'] = event['description'][0:996]+'...'
 
         event_img = requests.get(event['banner_path']).content
 
@@ -373,12 +378,11 @@ async def debugMsg(message):
 
 
 async def waitlist(guild):
-        channel = await guild.fetch_channel(int(SNR_Channel_ID[0]))
+        channel = await guild.fetch_channel(int(SNR_Channel_ID))
 
         # fetch count info
         query = site_url+'/api/data/bot/vis_loa.php?'
-        counts = webQuery(query,site_token[0])
-
+        counts = webQuery(query,site_token)
         # create embed msg
         if (int(counts['visit']) and int(counts['loa'])):
             embed = discord.Embed(colour=0x2664D8, title='Bi-Daily Waitlist Information', url=site_url)
