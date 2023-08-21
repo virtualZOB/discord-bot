@@ -4,6 +4,7 @@ import discord
 from datetime import datetime, timedelta
 import requests
 from discord.ext import tasks, commands
+from time import time
 
 configname = 'DEFAULT'
 configs = configparser.ConfigParser()
@@ -262,7 +263,7 @@ async def trainingRequest(message,command,guild):
             time = decoded[1]
             embed = discord.Embed(
                 color=0xFFCC00,
-                title="Spontaneous Training Available",
+                title="Training Request",
                 url=site_url
             )
             embed.add_field(
@@ -281,13 +282,45 @@ async def trainingRequest(message,command,guild):
                 inline=False
             )
             embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
-            await message.channel.send(embed = embed, delete_after=432000) #auto delete after 12 hrs
+            await message.channel.send(embed = embed, delete_after=432000.0) #auto delete after 12 hrs
         else:
             await message.author.send('**ERROR**\n Missing Parameter')
     else:
         await message.author.send('**ERROR**\n Incorrect Channel')
 
-
+async def trainingRequest(message,command,guild):
+    if (message.channel.id == SP_Channel_ID):
+        content = message.content.replace(prefix+command,"")
+        if "t:" in content:
+            decoded = content.split("t:")
+            time = decoded[1]
+            embed = discord.Embed(
+                color=0xFFCC00,
+                title="Training Request",
+                url=site_url
+            )
+            embed.add_field(
+                name="Student",
+                value=f'<@{message.author.id}>',
+                inline=False
+            )
+            embed.add_field(
+                name="Session Type",
+                value=decoded[0],
+                inline=False
+            )
+            embed.add_field(
+                name="Date/Time",
+                value=time,
+                inline=False
+            )
+            embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
+            return await message.channel.send(embed = embed, delete_after=432000.0) #auto delete after 12 hrs
+        else:
+            await message.author.send('**ERROR**\n Missing Parameter')
+    else:
+        await message.author.send('**ERROR**\n Incorrect Channel')
+        
 async def activity(message,client):
     count = 0
     embed = discord.Embed(colour=0xFF2E2E, title='Activity Notification', url=site_url)
@@ -308,6 +341,7 @@ async def activity(message,client):
     query = query.replace(" ",",")
     users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token)
     for usrid in users:
+        print(usrid)
         if (usrid):
             user = await client.fetch_member(usrid)
             if (user):
@@ -369,7 +403,7 @@ async def addEvent(message,guild):
         await message.author.send(f"**ERROR**\nEvent {eventid} Not Found")
 
 async def debugMsg(message):
-    embed = discord.Embed(colour=0x2664D8, title='Spontaneous Training', url=site_url)
+    embed = discord.Embed(colour=0x2664D8, title='Debug Message', url=site_url)
     embed.add_field(name='Debug Message',
                 value=message.content.lower().replace(prefix+'debugmsg ',""),
                 inline=False)
@@ -405,3 +439,16 @@ async def waitlist(guild):
         else:
             return
         await channel.send(embed = embed)
+
+
+async def deleteTreq(L_TREQ):
+    for req in L_TREQ:
+        if (time()-req[1])>43200:
+            try:
+                await req[0].delete()
+            except Exception as e:
+                print(e)
+            finally:
+                L_TREQ.remove(req)
+
+    return L_TREQ

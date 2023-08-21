@@ -25,6 +25,9 @@ SENIOR_STAFF    = []
 FACILITY_STAFF  = []
 TRAINING_STAFF  = []
 ACTIVE          = []
+WM              = []
+
+
 
 '''
 print("Discord.py Version:",end = '')
@@ -34,15 +37,17 @@ print(prefix)
 '''
 
 class MyClient(discord.Client):
+    L_TREQ = []
     t_start = time.time()
     async def on_ready(self):
         print(f'Logged on as {self.user}!')
         # Initialize Golbal Variables
-        global guild,SENIOR_STAFF,FACILITY_STAFF,TRAINING_STAFF
+        global guild,SENIOR_STAFF,FACILITY_STAFF,TRAINING_STAFF, WM
         guild = await self.fetch_guild(guild_id)
         SENIOR_STAFF    =  discord.utils.get(guild.roles,name="Senior Staff")
         FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
         TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
+        WM              =  discord.utils.get(guild.roles,name="WM")
 
     async def on_member_join(member):
         await syncroles(member, guild) # try to syncrole on member join
@@ -56,6 +61,7 @@ class MyClient(discord.Client):
             await user.remove_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
 
     async def on_message(self, message): # all reaction from message
+        self.L_TREQ = await deleteTreq(self.L_TREQ)
         if((time.time()-self.t_start)>43200):
             self.t_start = time.time()
             await waitlist(guild)
@@ -66,8 +72,11 @@ class MyClient(discord.Client):
             command = content[0]
 
             if(command == "treq" or command == "trainingrequest"):
-                await trainingRequest(message,command,guild)
+                msg = await trainingRequest(message,command,guild)
+                if (msg):
+                    self.L_TREQ.append([msg,time.time()])
                 noCommand = False
+
             elif (command == "sync"):
                 await syncroles(message.author, guild)
                 noCommand = False
@@ -99,7 +108,7 @@ class MyClient(discord.Client):
                 elif(command == "waitlist"):
                     await waitlist(guild)
                     noCommand = False
-            if (SENIOR_STAFF in message.author.roles):
+            if (SENIOR_STAFF in message.author.roles or WM in message.author.roles):
                 if(command == "activity"):
                     await activity(message,guild)
                     noCommand = False
