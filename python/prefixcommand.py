@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import requests
 from discord.ext import tasks, commands
 from time import time
+import html
 
 configname = 'DEFAULT'
 configs = configparser.ConfigParser()
@@ -39,7 +40,6 @@ async def syncroles(user, guild , live = False):
 
             if(not usrdata['type']=='lim'):
                 # HOME or VISITING controller
-
                 # LIVE
                 if(live):
                     if(user.display_name.find('LIVE')==-1):
@@ -360,11 +360,15 @@ async def removeroles(message,guild):
     users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token)
     for usrid in users:
         if (usrid):
-            user = await guild.fetch_member(usrid)
-            if (user):
-                await user.edit(roles=[])
-                await user.add_roles(await discord.utils.get(guild.roles,name= "VATSIM Controller"))
-                count += 1
+            try:
+                user = await guild.fetch_member(usrid)
+                if (user):
+                    await user.edit(roles=[])
+                    role = discord.utils.get(guild.roles,name="Visiting Controller")
+                    await user.add_roles(role)
+                    count += 1
+            except Exception as e:
+                print(e)
         else:
             print("User Not Found!")
     
@@ -389,13 +393,15 @@ async def addEvent(message,guild):
 
         channel = await guild.fetch_channel(964655381932539914) # breifing room
 
-        await guild.create_scheduled_event(name=event['name'], 
+
+        description_text = html.unescape(event['description']).replace('<br>','\n').replace('<strong>','**').replace('</strong>','**')
+        await guild.create_scheduled_event(name=html.unescape(event['name']), 
                                            entity_type = discord.EntityType['voice'],
                                            channel = channel,
                                            start_time=startTime,
                                            privacy_level = discord.PrivacyLevel['guild_only'],
                                            end_time=endTime,
-                                           description=event['description'],
+                                           description=description_text,
                                            image = bytearray(event_img),
                                            )
         await message.author.send("Event Added!")
@@ -409,7 +415,6 @@ async def debugMsg(message):
                 inline=False)
     await message.author.send(embed = embed)
     return
-
 
 async def waitlist(guild):
         channel = await guild.fetch_channel(int(SNR_Channel_ID))
@@ -440,7 +445,6 @@ async def waitlist(guild):
             return
         await channel.send(embed = embed)
 
-
 async def deleteTreq(L_TREQ):
     for req in L_TREQ:
         if (time()-req[1])>43200:
@@ -452,3 +456,10 @@ async def deleteTreq(L_TREQ):
                 L_TREQ.remove(req)
 
     return L_TREQ
+
+async def closethread(message,guild):
+    #check if it is a thread
+    if isinstance(message.channel,discord.channel.Thread):
+        await message.delete(delay=1.0)
+        await message.channel.send("It looks like this thread is no longer needed, so I'm going to close the thread now. Thanks again for the suggestion. If you have further concerns or wish to reopen this suggestion, please create a new issue thread.")
+        await message.channel.edit(archived=True, locked=True)

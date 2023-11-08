@@ -49,7 +49,7 @@ class MyClient(discord.Client):
         TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
         WM              =  discord.utils.get(guild.roles,name="WM")
 
-    async def on_member_join(member):
+    async def on_member_join(self,member):
         await syncroles(member, guild) # try to syncrole on member join
 
     async def on_reaction_add(self,reaction,user):
@@ -76,7 +76,6 @@ class MyClient(discord.Client):
                 if (msg):
                     self.L_TREQ.append([msg,time.time()])
                 noCommand = False
-
             elif (command == "sync"):
                 await syncroles(message.author, guild)
                 noCommand = False
@@ -91,7 +90,7 @@ class MyClient(discord.Client):
                 elif(command == 'syncid'):
                     #TODO 
                     pass
-
+                
             if (SENIOR_STAFF in message.author.roles or FACILITY_STAFF in message.author.roles):
                 if(command == "welcomemessage"):
                     await welcomeMessage(message)
@@ -108,6 +107,10 @@ class MyClient(discord.Client):
                 elif(command == "waitlist"):
                     await waitlist(guild)
                     noCommand = False
+                elif(command == "closethread"):
+                    await closethread(message,guild)
+                    noCommand = False
+
             if (SENIOR_STAFF in message.author.roles or WM in message.author.roles):
                 if(command == "activity"):
                     await activity(message,guild)
