@@ -185,10 +185,10 @@ async def spontaneous_embed(message):
                 value='Spontaneous Training is a venue for both students and training staff to post impromptu training availability in this channel. Do note that this source of availability **DOES NOT** guarantee that you will receive training, but instead is offered as a courtesy on behalf of the training staff. You MUST follow the rules listed below to use this system.',
                 inline=False)
     embed.add_field(name='What happens if I have a session scheduled already?',
-                value='To be notified of Spontaneous Training availability being posted by training staff, react to this message with a 📢.',
+                value='If you already have a session scheduled and you place interest for Spontaneous Training, your previous session will not be canceled and you may keep that session at your discretion. Do note that students that do not have a session scheduled may get priority over those that have a session scheduled on setmore.',
                 inline=False)
     embed.add_field(name='How do I get notified?',
-                value='Once you have properly linked your Discord account to our facility website you may now proceed to the most important step in initially syncing your roles via a command. To properly utilize the system type **!sync**, and let our robots tinker away and grant your roles.',
+                value='To be notified of Spontaneous Training availability being posted by training staff, react to this message with a 📢.',
                 inline=False)
     embed.add_field(name='Note',
                 value='This is not a venue to encourage soliciting, and we recommend being respectful when coordinating times with training staff for Spontaneous Training or sessions outside of the normal training schedule available on Setmore. If you have any questions or concerns regarding training, reach out to the Training Administrator (TA) or an appropriate member of the training staff.',
