@@ -383,18 +383,25 @@ async def addEvent(message,guild):
         startTime = datetime.strptime(event['event_date']+' '+event['time_start'] + ' +0000','%Y-%m-%d %H%M %z')
         endTime = datetime.strptime(event['event_date']+' '+event['time_end'] + ' +0000','%Y-%m-%d %H%M %z')
 
+        if(endTime == startTime):
+            endTime += timedelta(hours=4)
+            
         if(endTime<startTime):
             endTime += timedelta(days=1)
 
-        if(len(event['description'])>1000):
-            event['description'] = event['description'][0:996]+'...'
+
+        
+        #special charactors
+        description_text = html.unescape(event['description']).replace('<br>','\n').replace('<strong>','**').replace('</strong>','**')
+        
+        # Maximum charactor for event description
+        if(len(description_text)>1000):
+            description_text = description_text[0:996]+'...'
 
         event_img = requests.get(event['banner_path']).content
 
         channel = await guild.fetch_channel(964655381932539914) # breifing room
 
-
-        description_text = html.unescape(event['description']).replace('<br>','\n').replace('<strong>','**').replace('</strong>','**')
         await guild.create_scheduled_event(name=html.unescape(event['name']), 
                                            entity_type = discord.EntityType['voice'],
                                            channel = channel,
