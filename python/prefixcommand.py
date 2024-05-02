@@ -3,7 +3,7 @@ import configparser
 import discord
 from datetime import datetime, timedelta
 import requests
-from discord.ext import tasks, commands
+
 from time import time
 import html
 
@@ -389,8 +389,6 @@ async def addEvent(message,guild):
         if(endTime<startTime):
             endTime += timedelta(days=1)
 
-
-        
         #special charactors
         description_text = html.unescape(event['description']).replace('<br>','\n').replace('<strong>','**').replace('</strong>','**')
         
@@ -456,17 +454,18 @@ async def deleteTreq(L_TREQ):
     for req in L_TREQ:
         if (time()-req[1])>43200:
             try:
-                await req[0].delete()
+                await req[0].delete() #delete the message
             except Exception as e:
                 print(e)
             finally:
-                L_TREQ.remove(req)
+                L_TREQ.remove(req) # remove from queue
 
     return L_TREQ
 
 async def closethread(message,guild):
     #check if it is a thread
     if isinstance(message.channel,discord.channel.Thread):
-        await message.delete(delay=1.0)
-        await message.channel.send("It looks like this thread is no longer needed, so I'm going to close the thread now. Thanks again for the suggestion. If you have further concerns or wish to reopen this suggestion, please create a new issue thread.")
-        await message.channel.edit(archived=True, locked=True)
+        channel = message.channel
+        await message.delete()
+        await channel.send("It looks like this thread is no longer needed, so I'm going to close the thread now. Thanks again for the suggestion. If you have further concerns or wish to reopen this suggestion, please create a new issue thread.")
+        await channel.edit(archived=True, locked=True)
