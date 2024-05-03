@@ -31,13 +31,12 @@ WM              = []
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
-
 L_TREQ = []
 
 @client.event
 async def on_ready():
-    print(f'Logged on as {client.user}!')
 
+    print(f'Logged on as {client.user}!')
     # Initialize Golbal Variables
     global guild,SENIOR_STAFF,FACILITY_STAFF,TRAINING_STAFF, WM
     guild = await client.fetch_guild(guild_id)
@@ -45,6 +44,10 @@ async def on_ready():
     FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
     TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
     WM              =  discord.utils.get(guild.roles,name="WM")
+
+    # Start Loop Tasks
+    quaterHourLooped_tasks.start()
+    dayilyLooped_tasks.start()
 
 @client.event
 async def on_member_join(member):
@@ -129,13 +132,14 @@ async def on_voice_state_update(member, before, after):
     elif(after.channel.category.name == 'Controlling Floor'):
         await member.add_roles(act_role)
 
-@tasks.loop(seconds = 60)       
-async def looped_tasks():
+@tasks.loop(seconds=900)       
+async def quaterHourLooped_tasks():
+    global L_TREQ
     L_TREQ = await deleteTreq(L_TREQ)
 
-@tasks.loop(seconds = 43200)
+
+@tasks.loop(seconds = 43200.0)
 async def dayilyLooped_tasks():
     await waitlist(guild)
-
 
 client.run(discord_token)
