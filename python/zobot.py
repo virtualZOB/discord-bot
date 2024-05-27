@@ -2,7 +2,13 @@ import discord
 import configparser
 from prefixcommand import *
 import time
+import pytz
+import datetime
 from discord.ext import tasks, commands
+
+
+# If DEBUGGING turn this on to prevent bot get banned
+DEBUG = False
 
 # load KEYs from file
 configname = 'DEFAULT'
@@ -39,7 +45,9 @@ async def on_ready():
     print(f'Logged on as {client.user}!')
     # Initialize Golbal Variables
     global guild,SENIOR_STAFF,FACILITY_STAFF,TRAINING_STAFF, WM
-    guild = await client.fetch_guild(guild_id)
+    guild = client.get_guild(guild_id)
+    #guild = await client.fetch_guild(guild_id)
+
     SENIOR_STAFF    =  discord.utils.get(guild.roles,name="Senior Staff")
     FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
     TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
@@ -48,6 +56,9 @@ async def on_ready():
     # Start Loop Tasks
     quaterHourLooped_tasks.start()
     dayilyLooped_tasks.start()
+    reminder_task.start()
+
+    #DEBUG
 
 @client.event
 async def on_member_join(member):
@@ -110,6 +121,9 @@ async def on_message(message): # all reaction from message
             elif(command == "closethread"):
                 await closethread(message,guild)
                 noCommand = False
+            elif(command == "reminder"):
+                await sendTrainingReminder(guild)
+                noCommand = False
 
         if (SENIOR_STAFF in message.author.roles or WM in message.author.roles):
             if(command == "activity"):
@@ -136,10 +150,19 @@ async def on_voice_state_update(member, before, after):
 async def quaterHourLooped_tasks():
     global L_TREQ
     L_TREQ = await deleteTreq(L_TREQ)
+    if not DEBUG:
+        await updateStatusBoard(guild)
 
 
 @tasks.loop(seconds = 43200.0)
 async def dayilyLooped_tasks():
+    pass
+
+reminderTime = datetime.time(hour=7, minute=0, tzinfo=pytz.timezone('US/Eastern'))
+@tasks.loop(time = reminderTime)
+async def reminder_task():
+    await sendTrainingReminder(guild)
     await waitlist(guild)
+    print("Reminder Sent!")
 
 client.run(discord_token)

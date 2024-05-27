@@ -1,8 +1,9 @@
-from webQuery import webQuery
+from webQuery import webQuery, getPFieldStatus, schedulerQuery
 import configparser
 import discord
 from datetime import datetime, timedelta
 import requests
+import pytz
 
 from time import time
 import html
@@ -15,12 +16,18 @@ config = configs[configname]
 prefix          = config['prefix']
 site_token      = config['site_token']
 discord_token   = config['token']
+scheduler_token = config['scheduler_token']
 site_url        = config['site_url']
 guild_id        = int(config['guild_id'])
 FACILITY_ID     = config['FACILITY_ID']
 FACILITY_NAME   = config['FACILITY_NAME']
 SP_Channel_ID   = int(config['SP_Channel_ID'])
 SNR_Channel_ID  = int(config['SNR_Channel_ID'])
+
+DTW_SB_ID = int(config['DTW_SB'])
+CLE_SB_ID = int(config['CLE_SB'])
+PIT_SB_ID = int(config['PIT_SB'])
+BUF_SB_ID = int(config['BUF_SB'])
 
 async def syncroles(user, guild , live = False):
     query = site_url+'/api/data/bot/?discord_id='+str(user.id)
@@ -398,7 +405,7 @@ async def addEvent(message,guild):
 
         event_img = requests.get(event['banner_path']).content
 
-        channel = await guild.fetch_channel(964655381932539914) # breifing room
+        channel = discord.utils.get(guild.channels, name="Briefing Room") # breifing room
 
         await guild.create_scheduled_event(name=html.unescape(event['name']), 
                                            entity_type = discord.EntityType['voice'],
@@ -422,14 +429,15 @@ async def debugMsg(message):
     return
 
 async def waitlist(guild):
-        channel = await guild.fetch_channel(int(SNR_Channel_ID))
+        #channel = discord.utils.get(guild.channels, name="Senior Channel")
+        channel = discord.utils.get(guild.channels, id=SNR_Channel_ID)
 
         # fetch count info
         query = site_url+'/api/data/bot/vis_loa.php?'
         counts = webQuery(query,site_token)
         # create embed msg
         if (int(counts['visit']) and int(counts['loa'])):
-            embed = discord.Embed(colour=0x2664D8, title='Bi-Daily Waitlist Information', url=site_url)
+            embed = discord.Embed(colour=0x2664D8, title='Daily Waitlist Information', url=site_url)
             embed.add_field(name='Visitor Apllication',
                         value=f"{counts['visit']} Pending Visitor Apllication(s)",
                         inline=False)
@@ -448,7 +456,8 @@ async def waitlist(guild):
                         inline=False)
         else:
             return
-        await channel.send(embed = embed)
+        if channel:
+            await channel.send(embed = embed)
 
 async def deleteTreq(L_TREQ):
     for req in L_TREQ:
@@ -469,3 +478,71 @@ async def closethread(message,guild):
         await message.delete()
         await channel.send("It looks like this thread is no longer needed, so I'm going to close the thread now. Thanks again for the suggestion. If you have further concerns or wish to reopen this suggestion, please create a new issue thread.")
         await channel.edit(archived=True, locked=True)
+
+async def updateStatusBoard(guild):
+    fileds = ["DTW","CLE","PIT","BUF"]
+    IDS = [DTW_SB_ID,CLE_SB_ID,PIT_SB_ID,BUF_SB_ID]
+    for i in range(len(fileds)):
+        id = IDS[i]
+        channel = guild.get_channel(id)
+
+        query = getPFieldStatus()
+
+        #populate name
+        name = fileds[i] + " -- Dep: " + str(int(query[fileds[i].lower()+"_d"])) + "  Arr: " +  str(int(query[fileds[i].lower()+"_a"]))
+        await channel.edit(name = name, reason = "Status board update")
+        
+
+async def sendTrainingReminder(guild):
+    
+    bookings = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
+    timenow = datetime.now(pytz.timezone('US/Eastern'))
+
+    # Get appointments within 1 day.
+    for booking in bookings:
+        try:
+
+            startTime = datetime.strptime(booking['start'],"%Y-%m-%d %H:%M:%S")
+            startTime = startTime.replace(tzinfo=pytz.timezone('US/Eastern'))
+
+            if (startTime-timenow)<timedelta(days=1) and startTime > timenow:
+                
+                provider = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/providers/'+str(booking['providerId']),scheduler_token)
+                customer = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/'+str(booking['customerId']),scheduler_token)
+                service = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
+                
+                #reminders.append([provider['phone'],customer['phone'],service['name'],startTime]) #[provider customer service Starttime]
+                # Get discord info
+                provider_id = webQuery(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
+                customer_id = webQuery(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
+
+                #Send out reminder
+                provider_dc = guild.get_member(int(provider_id['discord_id']))
+                customer_dc = guild.get_member(int(customer_id['discord_id']))
+                
+                embed = discord.Embed(colour=0xf70d1a, title='Training Session Reminder')
+                embed.add_field(name='Session Name',
+                            value=service['name'],
+                            inline=False)
+                embed.add_field(
+                            name="Date/Time (Eastern)",
+                            value=booking['start'],
+                            inline=False
+                        )
+                embed.add_field(name='Instructor/Mentor',
+                            value=provider_dc.mention,
+                            inline=False)
+                embed.add_field(name='Student',
+                            value=customer_dc.mention,
+                            inline=False)
+                embed.add_field(name='Note',
+                            value='Please join the training lobby before your scheduled session time. If you are unable to attend, notify your instructor or mentor as soon as possible.',
+                            inline=False)
+                embed.set_footer(text='Maintained by the v' + FACILITY_ID + ' Web Services Team')
+                await provider_dc.send(embed = embed)
+                await customer_dc.send(embed = embed)
+        
+
+
+        except Exception as e:
+            print (e)
