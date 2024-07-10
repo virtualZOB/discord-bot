@@ -54,9 +54,15 @@ async def on_ready():
     WM              =  discord.utils.get(guild.roles,name="WM")
 
     # Start Loop Tasks
-    quaterHourLooped_tasks.start()
-    dayilyLooped_tasks.start()
-    reminder_task.start()
+    if not quaterHourLooped_tasks.is_running():
+        quaterHourLooped_tasks.start()
+        print("quaterHourLooped_tasks Started")
+    if not dayilyLooped_tasks.is_running():
+        dayilyLooped_tasks.start()
+        print("dayilyLooped_tasks Started")
+    if not reminder_task.is_running():
+        reminder_task.start()
+        print("reminder_task Started")
 
     #DEBUG
 
@@ -152,7 +158,6 @@ async def quaterHourLooped_tasks():
     L_TREQ = await deleteTreq(L_TREQ)
     if not DEBUG:
         await updateStatusBoard(guild)
-
 
 @tasks.loop(seconds = 43200.0)
 async def dayilyLooped_tasks():
