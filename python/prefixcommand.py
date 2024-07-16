@@ -209,6 +209,7 @@ async def spontaneous_embed(message):
     msg = await message.channel.send(embed = embed)
     await msg.add_reaction('📢')
     return
+
 async def spontaneous(message,command,guild):
     if (message.channel.id == SP_Channel_ID):
         content = message.content.replace(prefix+command,"")
@@ -338,7 +339,7 @@ async def activity(message,client):
                 value='If you are an Observer (OBS), it is required per 7210.3 to fulfill at least one complete training session each calendar month.',
                 inline=False)
     embed.add_field(name='Minimum Activity Requirement (S1+)',
-                value='If you are a Student 1 (S1) rated controller or higher, it is required per 7210.3 to fulfill two hours on a live position each calendar month.',
+                value='If you are a Student 1 (S1) rated controller or higher, it is required per 7210.3 to fulfill THREE hours on a live position each quarter.',
                 inline=False)
     embed.add_field(name='Leave of Absence',
                 value='If you are unable to meet the activity requirements you may request a Leave of Absence (LOA) per 7210.3 3.4. The minimum length for a LOA is 30 days and the maximum length is 90 days. Controllers in active duty military/armed forces will be permitted up to 24 months of LOA for miltary related deployment or duties but they must complete a checkout with the TA or Instructor upon their return.',
@@ -483,14 +484,18 @@ async def updateStatusBoard(guild):
     fileds = ["DTW","CLE","PIT","BUF"]
     IDS = [DTW_SB_ID,CLE_SB_ID,PIT_SB_ID,BUF_SB_ID]
     for i in range(len(fileds)):
-        id = IDS[i]
-        channel = guild.get_channel(id)
+        try:
+            id = IDS[i]
+            channel = guild.get_channel(id)
 
-        query = getPFieldStatus()
+            query = getPFieldStatus()
 
-        #populate name
-        name = fileds[i] + " -- Dep: " + str(int(query[fileds[i].lower()+"_d"])) + "  Arr: " +  str(int(query[fileds[i].lower()+"_a"]))
-        await channel.edit(name = name, reason = "Status board update")
+            #populate name
+            name = fileds[i] + " -- Dep: " + str(int(query[fileds[i].lower()+"_d"])) + "  Arr: " +  str(int(query[fileds[i].lower()+"_a"]))
+            await channel.edit(name = name, reason = "Status board update")
+        
+        except Exception as e:
+            print(e)
         
 
 async def sendTrainingReminder(guild):
@@ -520,7 +525,7 @@ async def sendTrainingReminder(guild):
                 provider_dc = guild.get_member(int(provider_id['discord_id']))
                 customer_dc = guild.get_member(int(customer_id['discord_id']))
                 
-                embed = discord.Embed(colour=0xf70d1a, title='Training Session Reminder')
+                embed = discord.Embed(colour=0x2664D8, title='Training Session Reminder')
                 embed.add_field(name='Session Name',
                             value=service['name'],
                             inline=False)
@@ -542,7 +547,81 @@ async def sendTrainingReminder(guild):
                 await provider_dc.send(embed = embed)
                 await customer_dc.send(embed = embed)
         
-
-
         except Exception as e:
             print (e)
+
+async def myAppointment(message,guild):
+    
+    timenow = datetime.now(pytz.timezone('US/Eastern'))
+    try:
+        user = webQuery(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
+        print(user['cid'])
+        customers = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/',scheduler_token)
+        for customer in customers:
+            try:
+                if int(customer['phone']) == int(user['cid']):
+                    eaCustomer_id = int(customer['id'])
+                    break
+                else:
+                    eaCustomer_id = 0
+            except Exception as e:
+                print (e)
+        if eaCustomer_id == 0:
+            await message.author.send(content = "I cannot find your information in the scheduling system")
+            return
+
+
+        bookings = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
+        for booking in bookings:
+
+            startTime = datetime.strptime(booking['start'],"%Y-%m-%d %H:%M:%S")
+            startTime = startTime.replace(tzinfo=pytz.timezone('US/Eastern'))
+            
+            if int(booking['customerId']) == eaCustomer_id and startTime > timenow:
+
+                provider = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/providers/'+str(booking['providerId']),scheduler_token)
+                service = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
+                # Get discord info
+                provider_id = webQuery(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
+                customer_id = webQuery(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
+
+                #Send out reminder
+                provider_dc = guild.get_member(int(provider_id['discord_id']))
+                customer_dc = guild.get_member(int(customer_id['discord_id']))
+
+
+                embed = discord.Embed(colour=0x2664D8, title='Your Upcoming Training Session')
+                embed.add_field(name='Session Information',
+                            value=service['name'],
+                            inline=False)
+                embed.add_field(
+                            name="Date/Time (Eastern)",
+                            value=booking['start'],
+                            inline=False
+                        )
+                embed.add_field(name='Instructor/Mentor',
+                            value=provider_dc.mention,
+                            inline=False)
+                embed.add_field(name='Student',
+                            value=customer_dc.mention,
+                            inline=False)
+                embed.add_field(name='Note',
+                            value='Please join the training lobby before your scheduled session time. If you are unable to attend, notify your instructor or mentor as soon as possible.',
+                            inline=False)
+                embed.set_footer(text='Maintained by the v' + FACILITY_ID + ' Web Services Team')
+
+                await customer_dc.send(embed = embed)
+
+                return
+
+        embed = discord.Embed(colour=0xf70d1a, title='Your Upcoming Training Session')
+        embed.add_field(name='Session Information',
+                    value='You do not have a session scheduled currently.',
+                    inline=False)
+        
+        await message.author.send(embed = embed)
+
+    except Exception as e:
+        print (e)
+
+        await message.author.send(content = "There is an error occurs when getting the data. Please try again later.")

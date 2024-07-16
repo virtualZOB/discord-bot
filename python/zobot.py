@@ -99,6 +99,10 @@ async def on_message(message): # all reaction from message
         elif(command == "live"):
             await syncroles(message.author,guild,live=True)
             noCommand = False
+        elif(command == "mysession"):
+            await myAppointment(message,guild)
+            noCommand = False
+
 
         if(SENIOR_STAFF in message.author.roles or FACILITY_STAFF in message.author.roles or TRAINING_STAFF in message.author.roles):
             if(command == "spontaneous" or command == "sp" ):
