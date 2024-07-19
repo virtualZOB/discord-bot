@@ -522,9 +522,17 @@ async def sendTrainingReminder(guild):
                 customer_id = webQuery(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
 
                 #Send out reminder
-                provider_dc = guild.get_member(int(provider_id['discord_id']))
-                customer_dc = guild.get_member(int(customer_id['discord_id']))
+                if provider_id:
+                    provider_dc = guild.get_member(int(provider_id['discord_id']))
+                else:
+                    provider_dc = []
                 
+                if customer_id:
+                    customer_dc = guild.get_member(int(customer_id['discord_id']))
+                else:
+                    customer_dc = []
+
+
                 embed = discord.Embed(colour=0x2664D8, title='Training Session Reminder')
                 embed.add_field(name='Session Name',
                             value=service['name'],
@@ -534,16 +542,27 @@ async def sendTrainingReminder(guild):
                             value=booking['start'],
                             inline=False
                         )
-                embed.add_field(name='Instructor/Mentor',
-                            value=provider_dc.mention,
-                            inline=False)
-                embed.add_field(name='Student',
-                            value=customer_dc.mention,
-                            inline=False)
+                if provider_id:
+                    embed.add_field(name='Instructor/Mentor',
+                                value=provider_dc.mention,
+                                inline=False)
+                else:
+                    embed.add_field(name='Instructor/Mentor',
+                                value=provider['first_name']+' '+provider['last_name'],
+                                inline=False)
+                if customer_id:
+                    embed.add_field(name='Student',
+                                value=customer_dc.mention,
+                                inline=False)
+                else:
+                    embed.add_field(name='Student',
+                                value=customer['first_name']+' '+customer['last_name'],
+                                inline=False)
                 embed.add_field(name='Note',
                             value='Please join the training lobby before your scheduled session time. If you are unable to attend, notify your instructor or mentor as soon as possible.',
                             inline=False)
                 embed.set_footer(text='Maintained by the v' + FACILITY_ID + ' Web Services Team')
+
                 await provider_dc.send(embed = embed)
                 await customer_dc.send(embed = embed)
         
@@ -555,7 +574,6 @@ async def myAppointment(message,guild):
     timenow = datetime.now(pytz.timezone('US/Eastern'))
     try:
         user = webQuery(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
-        print(user['cid'])
         customers = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/',scheduler_token)
         for customer in customers:
             try:
