@@ -1,4 +1,4 @@
-from webQuery import webQuery, getPFieldStatus, schedulerQuery
+from webQuery import webQuery, getPFieldStatus, schedulerQuery, webQuery_async
 import configparser
 import discord
 from datetime import datetime, timedelta
@@ -32,7 +32,7 @@ BUF_SB_ID = int(config['BUF_SB'])
 async def syncroles(user, guild , live = False):
     query = site_url+'/api/data/bot/?discord_id='+str(user.id)
     try:
-        usrdata = webQuery(query,site_token)
+        usrdata = await webQuery_async(query,site_token)
         if (not usrdata['status']=='None'): #Successfully query data from website
             name = str()
             fullname = str()
@@ -347,16 +347,15 @@ async def activity(message,client):
     
     query = message.content.replace(prefix+'activity ',"")
     query = query.replace(" ",",")
-    users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token)
+    users = await webQuery_async(site_url + '/api/data/bot/search/?ois='+query,site_token)
     for usrid in users:
-        print(usrid)
         if (usrid):
             user = await client.fetch_member(usrid)
             if (user):
                 await user.send(embed = embed)
                 count += 1
         else:
-            print("User Not Found!")
+            print("User Not Found!"+str(usrid))
     
     await message.reply('Sent '+str(count)+ ' activity message(s).')
     return
@@ -365,7 +364,7 @@ async def removeroles(message,guild):
     count = 0
     query = message.content.replace(prefix+'removeroles ',"")
     query = query.replace(" ",",")
-    users = webQuery(site_url + '/api/data/bot/search/?ois='+query,site_token)
+    users = await webQuery_async(site_url + '/api/data/bot/search/?ois='+query,site_token)
     for usrid in users:
         if (usrid):
             try:
@@ -378,7 +377,7 @@ async def removeroles(message,guild):
             except Exception as e:
                 print(e)
         else:
-            print("User Not Found!")
+            print("User Not Found!"+str(usrid))
     
     await message.reply('Removed '+str(count)+ ' role(s).')
     return
@@ -386,7 +385,7 @@ async def removeroles(message,guild):
 async def addEvent(message,guild):
     eventid = message.content.lower().replace(prefix+'addevent ',"")
     query = site_url+'/api/data/bot/event.php?event_id='+str(eventid)
-    event = webQuery(query,site_token)
+    event = await webQuery_async(query,site_token)
     if (not event['id']=='None'):
         startTime = datetime.strptime(event['event_date']+' '+event['time_start'] + ' +0000','%Y-%m-%d %H%M %z')
         endTime = datetime.strptime(event['event_date']+' '+event['time_end'] + ' +0000','%Y-%m-%d %H%M %z')
@@ -435,7 +434,7 @@ async def waitlist(guild):
 
         # fetch count info
         query = site_url+'/api/data/bot/vis_loa.php?'
-        counts = webQuery(query,site_token)
+        counts = await webQuery_async(query,site_token)
         # create embed msg
         if (int(counts['visit']) and int(counts['loa'])):
             embed = discord.Embed(colour=0x2664D8, title='Daily Waitlist Information', url=site_url)
@@ -488,7 +487,7 @@ async def updateStatusBoard(guild):
             id = IDS[i]
             channel = guild.get_channel(id)
 
-            query = getPFieldStatus()
+            query = await getPFieldStatus()
 
             #populate name
             name = fileds[i] + " -- Dep: " + str(int(query[fileds[i].lower()+"_d"])) + "  Arr: " +  str(int(query[fileds[i].lower()+"_a"]))
@@ -500,7 +499,7 @@ async def updateStatusBoard(guild):
 
 async def sendTrainingReminder(guild):
     
-    bookings = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
+    bookings = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
     timenow = datetime.now(pytz.timezone('US/Eastern'))
 
     # Get appointments within 1 day.
@@ -512,14 +511,14 @@ async def sendTrainingReminder(guild):
 
             if (startTime-timenow)<timedelta(days=1) and startTime > timenow:
                 
-                provider = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/providers/'+str(booking['providerId']),scheduler_token)
-                customer = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/'+str(booking['customerId']),scheduler_token)
-                service = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
+                provider = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/providers/'+str(booking['providerId']),scheduler_token)
+                customer = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/'+str(booking['customerId']),scheduler_token)
+                service = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
                 
                 #reminders.append([provider['phone'],customer['phone'],service['name'],startTime]) #[provider customer service Starttime]
                 # Get discord info
-                provider_id = webQuery(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
-                customer_id = webQuery(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
+                provider_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
+                customer_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
 
                 #Send out reminder
                 if provider_id:
@@ -573,8 +572,8 @@ async def myAppointment(message,guild):
     
     timenow = datetime.now(pytz.timezone('US/Eastern'))
     try:
-        user = webQuery(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
-        customers = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/',scheduler_token)
+        user = await webQuery_async(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
+        customers = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/',scheduler_token)
         for customer in customers:
             try:
                 if int(customer['phone']) == int(user['cid']):
@@ -589,7 +588,7 @@ async def myAppointment(message,guild):
             return
 
 
-        bookings = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
+        bookings = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
         for booking in bookings:
 
             startTime = datetime.strptime(booking['start'],"%Y-%m-%d %H:%M:%S")
@@ -597,11 +596,11 @@ async def myAppointment(message,guild):
             
             if int(booking['customerId']) == eaCustomer_id and startTime > timenow:
 
-                provider = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/providers/'+str(booking['providerId']),scheduler_token)
-                service = schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
+                provider = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/providers/'+str(booking['providerId']),scheduler_token)
+                service = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
                 # Get discord info
-                provider_id = webQuery(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
-                customer_id = webQuery(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
+                provider_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
+                customer_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
 
                 #Send out reminder
                 provider_dc = guild.get_member(int(provider_id['discord_id']))

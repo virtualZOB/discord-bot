@@ -131,9 +131,14 @@ async def on_message(message): # all reaction from message
             elif(command == "closethread"):
                 await closethread(message,guild)
                 noCommand = False
+            '''
             elif(command == "reminder"):
                 await sendTrainingReminder(guild)
                 noCommand = False
+            elif(command == "updatefieldstatus"):
+                await updateStatusBoard(guild)
+                noCommand = False
+            '''
 
         if (SENIOR_STAFF in message.author.roles or WM in message.author.roles):
             if(command == "activity"):
