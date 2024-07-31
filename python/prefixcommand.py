@@ -33,6 +33,7 @@ async def syncroles(user, guild , live = False):
     query = site_url+'/api/data/bot/?discord_id='+str(user.id)
     try:
         usrdata = await webQuery_async(query,site_token)
+        
         if (not usrdata['status']=='None'): #Successfully query data from website
             name = str()
             fullname = str()
@@ -44,7 +45,7 @@ async def syncroles(user, guild , live = False):
                     name = usrdata['first_name'] 
                 else:
                     name = usrdata['first_name'] + ' '+usrdata['last_name']
-
+            
             if(not usrdata['type']=='lim'):
                 # HOME or VISITING controller
                 # LIVE
@@ -82,14 +83,16 @@ async def syncroles(user, guild , live = False):
                     if (usrdata['rating'] == 'ADM'):
                         fullname = name + ' | VAT???#'; 
                     if (usrdata['mentor'] == 'Yes'):
-                        fullname = name + ' | MTR'; 
+                        if (usrdata['mentor_name'] == 'Mentor'):
+                            fullname = name + ' | MTR'; 
+                        else:
+                            fullname = name + ' | MIT'; 
                     if (usrdata['ins'] == 'Yes'):
                         fullname = name + ' | INS'; 
                     if (not usrdata['staff'] == ''):
                         fullname = name + ' | '+ usrdata['staff']
 
                 await user.edit(nick = fullname)
-
                 # REMOVE ROLES
                 await removeAllRoles(user)
 
@@ -115,7 +118,7 @@ async def syncroles(user, guild , live = False):
                     await user.add_roles(staffRole)
 
                 # TRAINING STAFF?
-                if(usrdata['mentor']=='Yes' or usrdata['ins']=='Yes'):
+                if((usrdata['mentor']=='Yes' and usrdata['mentor_name'] == 'Mentor') or usrdata['ins']=='Yes'):
                     tStaffRole = discord.utils.get(guild.roles,name= "Training Staff")
                     await user.add_roles(tStaffRole)
 
@@ -375,7 +378,7 @@ async def removeroles(message,guild):
                     await user.add_roles(role)
                     count += 1
             except Exception as e:
-                print(e)
+                print("error in removeroles():" + e)
         else:
             print("User Not Found!"+str(usrid))
     
@@ -465,6 +468,7 @@ async def deleteTreq(L_TREQ):
             try:
                 await req[0].delete() #delete the message
             except Exception as e:
+                print("Error in deleteTreq(): ")
                 print(e)
             finally:
                 L_TREQ.remove(req) # remove from queue
@@ -494,18 +498,23 @@ async def updateStatusBoard(guild):
             await channel.edit(name = name, reason = "Status board update")
         
         except Exception as e:
+            print("error in updateStatusBoard(): ") 
             print(e)
         
 
 async def sendTrainingReminder(guild):
     
     bookings = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
+    while (not bookings):
+        bookings = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
+        print("Nothing in Bookings, trying again")
+
+
     timenow = datetime.now(pytz.timezone('US/Eastern'))
 
     # Get appointments within 1 day.
     for booking in bookings:
         try:
-
             startTime = datetime.strptime(booking['start'],"%Y-%m-%d %H:%M:%S")
             startTime = startTime.replace(tzinfo=pytz.timezone('US/Eastern'))
 
@@ -563,10 +572,13 @@ async def sendTrainingReminder(guild):
                 embed.set_footer(text='Maintained by the v' + FACILITY_ID + ' Web Services Team')
 
                 await provider_dc.send(embed = embed)
+                print("Reminder sent to provider " + provider['firstName']+' '+provider['lastName'] + ', Session ID:' + str(booking['id']))
                 await customer_dc.send(embed = embed)
+                print("Reminder sent to customer " + customer['firstName']+' '+customer['lastName'] + ', Session ID:' + str(booking['id']))
         
         except Exception as e:
-            print (e)
+            print ("error in sendTrainingReminder(): ") 
+            print(e)
 
 async def myAppointment(message,guild):
     
@@ -582,7 +594,8 @@ async def myAppointment(message,guild):
                 else:
                     eaCustomer_id = 0
             except Exception as e:
-                print (e)
+                print ("error 1 in myAppointment():")
+                print(e)
         if eaCustomer_id == 0:
             await message.author.send(content = "I cannot find your information in the scheduling system")
             return
@@ -600,11 +613,10 @@ async def myAppointment(message,guild):
                 service = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
                 # Get discord info
                 provider_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
-                customer_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
 
                 #Send out reminder
                 provider_dc = guild.get_member(int(provider_id['discord_id']))
-                customer_dc = guild.get_member(int(customer_id['discord_id']))
+                customer_dc = message.author
 
 
                 embed = discord.Embed(colour=0x2664D8, title='Your Upcoming Training Session')
@@ -639,6 +651,7 @@ async def myAppointment(message,guild):
         await message.author.send(embed = embed)
 
     except Exception as e:
-        print (e)
+        print ("error 2 in myAppointment():")
+        print(e)
 
         await message.author.send(content = "There is an error occurs when getting the data. Please try again later.")

@@ -109,8 +109,22 @@ async def on_message(message): # all reaction from message
                 await spontaneous(message,command,guild)
                 noCommand = False
             elif(command == 'syncid'):
-                #TODO 
-                pass
+                try: 
+                    usrid = int(message.content.replace(prefix+command,"").replace(" ",""))
+                    usr = guild.get_member(usrid)
+                    good = await syncroles(usr, guild)
+                    if good == 1:
+                        await message.author.send("User has been synced!")
+                    elif good == -1:
+                        await message.author.send("User has not been synced! Error Occurs")
+                    else:
+                        await message.author.send("User has not link their account on the website")
+
+                except Exception as e:
+                    print("erro in syncid : ")
+                    print(e)
+                    
+                noCommand = False
             
         if (SENIOR_STAFF in message.author.roles or FACILITY_STAFF in message.author.roles):
             if(command == "welcomemessage"):
@@ -131,10 +145,12 @@ async def on_message(message): # all reaction from message
             elif(command == "closethread"):
                 await closethread(message,guild)
                 noCommand = False
-            '''
+            
             elif(command == "reminder"):
+                print("Working on sending reminders")
                 await sendTrainingReminder(guild)
                 noCommand = False
+            '''
             elif(command == "updatefieldstatus"):
                 await updateStatusBoard(guild)
                 noCommand = False
