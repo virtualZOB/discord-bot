@@ -8,7 +8,7 @@ from discord.ext import tasks, commands
 
 
 # If DEBUGGING turn this on to prevent bot get banned
-DEBUG = False
+DEBUG = True
 
 # load KEYs from file
 configname = 'DEFAULT'
@@ -71,14 +71,15 @@ async def on_member_join(member):
     await syncroles(member, guild) # try to syncrole on member join
 
 @client.event
-async def on_reaction_add(reaction,user):
-    if(reaction.emoji == '📢' and reaction.message.channel.id == int(SP_Channel_ID) and not user.bot):
-        await user.add_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
+async def on_raw_reaction_add(payload):
+    if(str(payload.emoji) == '📢' and payload.channel_id == int(SP_Channel_ID) and not payload.member.bot):
+        await payload.member.add_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
 
 @client.event
-async def on_reaction_remove(reaction, user):
-    if(reaction.emoji == '📢' and reaction.message.channel.id == int(SP_Channel_ID) and not user.bot):
-        await user.remove_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
+async def on_raw_reaction_remove(payload):
+    member = discord.utils.get(guild.members, id = payload.user_id)
+    if(str(payload.emoji) == '📢' and payload.channel_id == int(SP_Channel_ID) and not member.bot):
+        await member.remove_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
 
 @client.event
 async def on_message(message): # all reaction from message

@@ -167,8 +167,9 @@ async def syncroles(user, guild , live = False):
             embed.set_footer(text='Maintained by the v' + FACILITY_ID + ' Web Services Team')
             await user.send(embed=embed)
             return 0
-    except: # catch excpets when not matching is found on the website
+    except Exception as e: # catch excpets when not matching is found on the website
         print('Error in sycroles. Username:'+ user.display_name + ' ID:'+ str(user.id))
+        print(e)
         return -1
 
 
@@ -218,7 +219,7 @@ async def spontaneous(message,command,guild):
         content = message.content.replace(prefix+command,"")
         limit = []
         if "l:" in message.content:
-            decoded = message.content.split("l:")
+            decoded = content.split("l:")
             limit = decoded[1]
 
         if limit:
