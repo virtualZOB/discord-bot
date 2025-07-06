@@ -43,12 +43,11 @@ L_TREQ = []
 active_vatsim_users = set()
 original_nicknames = {}
 last_callsigns = {}
+previously_active = {}
 
 artccId = "ZOB"
 discord_url = "https://api.vatsim.net/v2/members/discord/"
 vnas_live_datafeed = "https://live.env.vnas.vatsim.net/data-feed/controllers.json"
-
-TARGET_CATEGORY_ID = 1391225677432225935
 
 def log(msg):
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
@@ -190,8 +189,7 @@ async def get_vatsim_cid_from_discord(discord_user_id: int) -> str | None:
             if resp.status == 200:
                 data = await resp.json()
                 return data.get("user_id")
-            else:
-                return None
+            return None
 
 async def check_if_connected_to_vatsim(vatsim_cid):
     headers = {'Accept': 'application/json'}
@@ -204,9 +202,7 @@ async def check_if_connected_to_vatsim(vatsim_cid):
 
             data = await resp.json()
 
-    controller_list = data.get("controllers", [])
-
-    for controller in controller_list:
+    for controller in data.get("controllers", []):
         if controller.get("artccId") != artccId:
             continue
 
@@ -214,12 +210,16 @@ async def check_if_connected_to_vatsim(vatsim_cid):
         positions = controller.get("positions", [])
 
         if vatsim_data and str(vatsim_data.get("cid")) == str(vatsim_cid):
-            callsign = vatsim_data.get("callsign")
+            # If any active ARTCC position exists, return its positionName
             for pos in positions:
-                if pos.get("positionType") == "Artcc":
-                    callsign = pos.get("positionName")
-                    break
-            return True, callsign
+                if pos.get("positionType") == "Artcc" and pos.get("isActive", False):
+                    return True, pos.get("positionName")
+
+            # If no active ARTCC, but any other position is active, return the callsign
+            if any(pos.get("isActive", False) for pos in positions):
+                return True, pos.get("defaultCallsign")
+
+            return False, None
 
     return False, None
 
@@ -228,7 +228,7 @@ async def monitor_voice_and_sync():
     log("[monitor_voice_and_sync] Monitoring connection status")
     for guild in client.guilds:
         for vc in guild.voice_channels:
-            if vc.category and vc.category.id == TARGET_CATEGORY_ID:
+            if vc.category and vc.category.name == "Controlling Floor":
                 for member in vc.members:
                     if member.bot:
                         continue
@@ -245,22 +245,24 @@ async def monitor_voice_and_sync():
 
                         if (member.id not in active_vatsim_users or
                             last_callsigns.get(member.id) != current_callsign):
-
                             await syncCallsignToNickname(member, current_callsign)
                             last_callsigns[member.id] = current_callsign
                             active_vatsim_users.add(member.id)
 
+                        previously_active[member.id] = True
+
                     else:
-                        if member.id in active_vatsim_users:
+                        if previously_active.get(member.id, False):
                             original = original_nicknames.pop(member.id, None)
                             if original:
                                 try:
                                     await member.edit(nick=original)
-                                    log(f"[Nickname Reset] Restored {member.name} to '{original}'")
+                                    log(f"[Nickname Reset] Restored {member.name} to '{original}' (no longer active)")
                                 except discord.Forbidden:
                                     log(f"[Nickname Reset] Missing permissions to restore nickname for {member.name}")
-                            active_vatsim_users.remove(member.id)
+                            active_vatsim_users.discard(member.id)
                             last_callsigns.pop(member.id, None)
+                            previously_active[member.id] = False
 
 @client.event
 async def on_voice_state_update(member, before, after):
