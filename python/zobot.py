@@ -5,11 +5,12 @@ import time
 import pytz
 import datetime
 from discord.ext import tasks, commands
-from datetime import datetime
+import json
+
 import aiohttp
 
 # If DEBUGGING turn this on to prevent bot get banned
-DEBUG = True
+DEBUG = False
 
 # load KEYs from file
 configname = 'DEFAULT'
@@ -40,22 +41,13 @@ client = discord.Client(intents=intents)
 
 L_TREQ = []
 
-active_vatsim_users = set()
-original_nicknames = {}
-last_callsigns = {}
-previously_active = {}
-
-artccId = "ZOB"
-discord_url = "https://api.vatsim.net/v2/members/discord/"
-vnas_live_datafeed = "https://live.env.vnas.vatsim.net/data-feed/controllers.json"
 
 def log(msg):
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
+    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
 
 @client.event
 async def on_ready():
     log(f'Logged on as {client.user}!')
-    monitor_voice_and_sync.start()
     # Initialize Golbal Variables
     global guild,SENIOR_STAFF,FACILITY_STAFF,TRAINING_STAFF, WM
     guild = client.get_guild(guild_id)
@@ -76,6 +68,9 @@ async def on_ready():
     if not reminder_task.is_running():
         reminder_task.start()
         print("reminder_task Started")
+    if not monitor_active_controller.is_running():
+        monitor_active_controller.start()
+        print("monitor_active_controller Started")
 
 @client.event
 async def on_member_join(member):
@@ -181,140 +176,78 @@ async def on_message(message): # all reaction from message
         if not(command == "activity" or command == "removeroles"):
             await message.delete(delay=1.0)
 
-async def get_vatsim_cid_from_discord(discord_user_id: int) -> str | None:
-    url = f"{discord_url}{discord_user_id}"
-    headers = {'Accept': 'application/json'}
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url, headers=headers) as resp:
-            if resp.status == 200:
-                data = await resp.json()
-                return data.get("user_id")
-            return None
 
-async def check_if_connected_to_vatsim(vatsim_cid):
-    headers = {'Accept': 'application/json'}
 
-    async with aiohttp.ClientSession() as session:
-        async with session.get(vnas_live_datafeed, headers=headers) as resp:
-            if resp.status != 200:
-                log(f"[check_if_connected_to_vatsim] Failed to fetch controller data: HTTP {resp.status}")
-                return False, None
+@tasks.loop(seconds=60)
+async def monitor_active_controller():
+    # Load datas
+    actives = await webQuery_async(site_url + '/api/data/bot/activeControllers.php',site_token)
+    # Load existing data or create empty file
+    try:
+        with open("nicknames.json", "r") as f:
+            nicknames = json.load(f)
+    except FileNotFoundError:
+        nicknames = {}
+    
+    # Change Name to Position
+    currn_active = set()
+    for controller in actives:
+        # current list of controller discord ids
+        currn_active.add(controller['discord_id'])
+        if not nicknames.get(controller['discord_id']):
+            if controller['discord_id']:
+                member = guild.get_member(int(controller['discord_id']))
+                if member:
+                    oldName = member.display_name
 
-            data = await resp.json()
+                    if controller['type'] == 'Center': #e.g.: RAV48 | OI
+                        newName = controller['position_name'][0:3].upper() + controller['position_name'][-2:] + ' | ' + controller['OI']
+                    else: #e.g. DTW_F_APP | OI
+                        newName = controller['default_callsign'] + ' | ' + controller['OI']
 
-    for controller in data.get("controllers", []):
-        if controller.get("artccId") != artccId:
-            continue
+                    try:
+                        await member.edit(nick=newName)
+                        print(f"Changing nickname for {member.name}")
+                    except discord.Forbidden:
+                        print(f"Missing permission to restore {member.name}")
 
-        vatsim_data = controller.get("vatsimData")
-        positions = controller.get("positions", [])
+                    # add to json file
+                    nicknames[controller['discord_id']] = {
+                        "discord_id": controller['discord_id'],
+                        "original_name": oldName
+                    }
+            else:
+                print(f"{controller['cid']} does not have discord linked")
 
-        if vatsim_data and str(vatsim_data.get("cid")) == str(vatsim_cid):
-            # If any active ARTCC position exists, return its positionName
-            for pos in positions:
-                if pos.get("positionType") == "Artcc" and pos.get("isActive", False):
-                    return True, pos.get("positionName")
+    # Restore Name
+    to_delete = []
+    for discord_id in nicknames:
+        if discord_id not in currn_active:
+            member = guild.get_member(int(discord_id))
+            if member:
+                try:
+                    await member.edit(nick=nicknames[discord_id]['original_name'])
+                    print(f"Restored nickname for {member.name}")
+                    to_delete.append(discord_id)
+                except discord.Forbidden:
+                    print(f"Missing permission to restore nickname for {member.name}")
+            else:
+                print(f"Member with Discord ID {discord_id} not found for restoration.")
 
-            # If no active ARTCC, but any other position is active, return the callsign
-            if any(pos.get("isActive", False) for pos in positions):
-                return True, pos.get("defaultCallsign")
-
-            return False, None
-
-    return False, None
-
-@tasks.loop(seconds=15)
-async def monitor_voice_and_sync():
-    log("[monitor_voice_and_sync] Monitoring connection status")
-    for guild in client.guilds:
-        for vc in guild.voice_channels:
-            if vc.category and vc.category.name == "Controlling Floor":
-                for member in vc.members:
-                    if member.bot:
-                        continue
-
-                    vatsim_cid = await get_vatsim_cid_from_discord(member.id)
-                    if not vatsim_cid:
-                        continue
-
-                    is_connected, current_callsign = await check_if_connected_to_vatsim(vatsim_cid)
-
-                    if is_connected:
-                        if member.id not in original_nicknames:
-                            original_nicknames[member.id] = member.nick or member.display_name
-
-                        if (member.id not in active_vatsim_users or
-                            last_callsigns.get(member.id) != current_callsign):
-                            await syncCallsignToNickname(member, current_callsign)
-                            last_callsigns[member.id] = current_callsign
-                            active_vatsim_users.add(member.id)
-
-                        previously_active[member.id] = True
-
-                    else:
-                        if previously_active.get(member.id, False):
-                            original = original_nicknames.pop(member.id, None)
-                            if original:
-                                try:
-                                    await member.edit(nick=original)
-                                    log(f"[Nickname Reset] Restored {member.name} to '{original}' (no longer active)")
-                                except discord.Forbidden:
-                                    log(f"[Nickname Reset] Missing permissions to restore nickname for {member.name}")
-                            active_vatsim_users.discard(member.id)
-                            last_callsigns.pop(member.id, None)
-                            previously_active[member.id] = False
+    # Remove restored users from nicknames dict
+    for discord_id in to_delete:
+        del nicknames[discord_id]
+    # save json to file
+    with open("nicknames.json", "w") as f:
+        json.dump(nicknames, f, indent=2)  # indent makes it pretty
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    guild = member.guild
-    act_role = discord.utils.get(guild.roles, name="Active Controller")
-
-    if after.channel and after.channel.category and after.channel.category.name == 'Controlling Floor':
-        if member.id not in original_nicknames:
-            original_nicknames[member.id] = member.nick or member.display_name
-
-        if act_role:
-            await member.add_roles(act_role)
-        vatsim_cid = await get_vatsim_cid_from_discord(member.id)
-        if not vatsim_cid:
-            log(f"[on_voice_state_update] No VATSIM CID found for {member.name}")
-            return
-
-        is_connected, current_callsign = await check_if_connected_to_vatsim(vatsim_cid)
-        if is_connected and current_callsign:
-            await syncCallsignToNickname(member, current_callsign)
-
-    elif before.channel and before.channel.category and before.channel.category.name == 'Controlling Floor':
-        still_in_category = (
-            after.channel and after.channel.category and after.channel.category.name == 'Controlling Floor'
-        )
-
-        if not still_in_category:
-            original = original_nicknames.pop(member.id, None)
-            if original:
-                try:
-                    await member.edit(nick=original)
-                    log(f"[on_voice_state_update] Restored nickname for {member.name} to '{original}'")
-                except discord.Forbidden:
-                    log(f"[on_voice_state_update] Missing permissions to restore nickname for {member.name}")
-            if act_role:
-                await member.remove_roles(act_role)
-
-async def syncCallsignToNickname(member: discord.Member, raw_callsign: str):
-    try:
-        callsign_clean = raw_callsign.replace("_", " ")
-
-        suffix = ""
-        if member.nick and "|" in member.nick:
-            suffix = member.nick.split("|", 1)[1].strip()
-
-        new_nickname = f"{callsign_clean} | {suffix}" if suffix else callsign_clean
-
-        await member.edit(nick=new_nickname)
-        log(f"[syncCallsignToNickname] Nickname updated to: '{new_nickname}'")
-
-    except Exception as e:
-        log(f"[syncCallsignToNickname] Error: {e}")
+    act_role = discord.utils.get(guild.roles,name= "Active Controller")
+    if (after.channel == None or not after.channel.category.name == 'Controlling Floor'):
+        await member.remove_roles(act_role)
+    elif(after.channel.category.name == 'Controlling Floor'):
+        await member.add_roles(act_role)
         
 @tasks.loop(seconds=900)       
 async def quaterHourLooped_tasks():

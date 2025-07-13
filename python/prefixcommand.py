@@ -1,4 +1,4 @@
-from webQuery import webQuery, getPFieldStatus, schedulerQuery, webQuery_async
+from webQuery import getPFieldStatus, schedulerQuery, webQuery_async
 import configparser
 import discord
 from datetime import datetime, timedelta
