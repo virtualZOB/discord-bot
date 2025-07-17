@@ -40,7 +40,10 @@ client = discord.Client(intents=intents)
 L_TREQ = []
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
 # Load center name
 try:
     with open("center.json", "r") as f:
