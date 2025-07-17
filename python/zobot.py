@@ -39,6 +39,19 @@ client = discord.Client(intents=intents)
 
 L_TREQ = []
 
+<<<<<<< Updated upstream
+=======
+# Load center name
+try:
+    with open("center.json", "r") as f:
+        centers = json.load(f)
+except FileNotFoundError:
+    centers = {}
+
+def log(msg):
+    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
+
+>>>>>>> Stashed changes
 @client.event
 async def on_ready():
 
@@ -170,6 +183,74 @@ async def on_message(message): # all reaction from message
         if not(command == "activity" or command == "removeroles"):
             await message.delete(delay=1.0)
 
+<<<<<<< Updated upstream
+=======
+
+
+@tasks.loop(seconds=60)
+async def monitor_active_controller():
+    # Load datas
+    actives = await webQuery_async(site_url + '/api/data/bot/activeControllers.php',site_token)
+    # Load existing data or create empty file
+    try:
+        with open("nicknames.json", "r") as f:
+            nicknames = json.load(f)
+    except FileNotFoundError:
+        nicknames = {}
+    
+    # Change Name to Position
+    currn_active = set()
+    for controller in actives:
+        # current list of controller discord ids
+        currn_active.add(controller['discord_id'])
+        if not nicknames.get(controller['discord_id']):
+            if controller['discord_id']:
+                member = guild.get_member(int(controller['discord_id']))
+                if member:
+                    oldName = member.display_name
+
+                    if controller['type'] == 'Center': #e.g.: RAV48 | OI
+                        newName = centers[controller['position_name'][-2:]] + controller['position_name'][-2:] + ' | ' + controller['OI']
+                    else: #e.g. DTW_F_APP | OI
+                        newName = controller['default_callsign'] + ' | ' + controller['OI']
+
+                    try:
+                        await member.edit(nick=newName)
+                        print(f"Changing nickname for {member.name}")
+                    except discord.Forbidden:
+                        print(f"Missing permission to restore {member.name}")
+
+                    # add to json file
+                    nicknames[controller['discord_id']] = {
+                        "discord_id": controller['discord_id'],
+                        "original_name": oldName
+                    }
+            else:
+                print(f"{controller['cid']} does not have discord linked")
+
+    # Restore Name
+    to_delete = []
+    for discord_id in nicknames:
+        if discord_id not in currn_active:
+            member = guild.get_member(int(discord_id))
+            if member:
+                try:
+                    await member.edit(nick=nicknames[discord_id]['original_name'])
+                    print(f"Restored nickname for {member.name}")
+                    to_delete.append(discord_id)
+                except discord.Forbidden:
+                    print(f"Missing permission to restore nickname for {member.name}")
+            else:
+                print(f"Member with Discord ID {discord_id} not found for restoration.")
+
+    # Remove restored users from nicknames dict
+    for discord_id in to_delete:
+        del nicknames[discord_id]
+    # save json to file
+    with open("nicknames.json", "w") as f:
+        json.dump(nicknames, f, indent=2)  # indent makes it pretty
+
+>>>>>>> Stashed changes
 @client.event
 async def on_voice_state_update(member, before, after):
     act_role = discord.utils.get(guild.roles,name= "Active Controller")
