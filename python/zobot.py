@@ -5,10 +5,10 @@ import time
 import pytz
 import datetime
 from discord.ext import tasks, commands
-
+import json
 
 # If DEBUGGING turn this on to prevent bot get banned
-DEBUG = True
+DEBUG = False
 
 # load KEYs from file
 configname = 'DEFAULT'
@@ -39,11 +39,6 @@ client = discord.Client(intents=intents)
 
 L_TREQ = []
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
 # Load center name
 try:
     with open("center.json", "r") as f:
@@ -51,14 +46,13 @@ try:
 except FileNotFoundError:
     centers = {}
 
+
 def log(msg):
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
 
->>>>>>> Stashed changes
 @client.event
 async def on_ready():
-
-    print(f'Logged on as {client.user}!')
+    log(f'Logged on as {client.user}!')
     # Initialize Golbal Variables
     global guild,SENIOR_STAFF,FACILITY_STAFF,TRAINING_STAFF, WM
     guild = client.get_guild(guild_id)
@@ -79,8 +73,9 @@ async def on_ready():
     if not reminder_task.is_running():
         reminder_task.start()
         print("reminder_task Started")
-
-    #DEBUG
+    if not monitor_active_controller.is_running():
+        monitor_active_controller.start()
+        print("monitor_active_controller Started")
 
 @client.event
 async def on_member_join(member):
@@ -186,9 +181,6 @@ async def on_message(message): # all reaction from message
         if not(command == "activity" or command == "removeroles"):
             await message.delete(delay=1.0)
 
-<<<<<<< Updated upstream
-=======
-
 
 @tasks.loop(seconds=60)
 async def monitor_active_controller():
@@ -253,7 +245,6 @@ async def monitor_active_controller():
     with open("nicknames.json", "w") as f:
         json.dump(nicknames, f, indent=2)  # indent makes it pretty
 
->>>>>>> Stashed changes
 @client.event
 async def on_voice_state_update(member, before, after):
     act_role = discord.utils.get(guild.roles,name= "Active Controller")
@@ -261,7 +252,7 @@ async def on_voice_state_update(member, before, after):
         await member.remove_roles(act_role)
     elif(after.channel.category.name == 'Controlling Floor'):
         await member.add_roles(act_role)
-
+        
 @tasks.loop(seconds=900)       
 async def quaterHourLooped_tasks():
     global L_TREQ
