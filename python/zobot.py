@@ -7,6 +7,8 @@ import datetime
 from discord.ext import tasks, commands
 import json
 
+import aiohttp
+
 # If DEBUGGING turn this on to prevent bot get banned
 DEBUG = False
 
@@ -45,7 +47,6 @@ try:
         centers = json.load(f)
 except FileNotFoundError:
     centers = {}
-
 
 def log(msg):
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {msg}")
@@ -182,6 +183,7 @@ async def on_message(message): # all reaction from message
             await message.delete(delay=1.0)
 
 
+
 @tasks.loop(seconds=60)
 async def monitor_active_controller():
     # Load datas
@@ -229,10 +231,10 @@ async def monitor_active_controller():
         if discord_id not in currn_active:
             member = guild.get_member(int(discord_id))
             if member:
+                to_delete.append(discord_id)
                 try:
                     await member.edit(nick=nicknames[discord_id]['original_name'])
                     print(f"Restored nickname for {member.name}")
-                    to_delete.append(discord_id)
                 except discord.Forbidden:
                     print(f"Missing permission to restore nickname for {member.name}")
             else:
