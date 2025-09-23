@@ -391,8 +391,8 @@ async def addEvent(message,guild):
     query = site_url+'/api/data/bot/event.php?event_id='+str(eventid)
     event = await webQuery_async(query,site_token)
     if (not event['id']=='None'):
-        startTime = datetime.strptime(event['event_date']+' '+event['time_start'] + ' +0000','%Y-%m-%d %H%M %z')
-        endTime = datetime.strptime(event['event_date']+' '+event['time_end'] + ' +0000','%Y-%m-%d %H%M %z')
+        startTime = datetime.strptime(event['time_start'] + '+0000','%Y-%m-%dT%H:%M%z')
+        endTime = datetime.strptime(event['time_end']+ '+0000','%Y-%m-%dT%H:%M%z')
 
         if(endTime == startTime):
             endTime += timedelta(hours=4)
