@@ -17,6 +17,7 @@ prefix          = config['prefix']
 site_token      = config['site_token']
 discord_token   = config['token']
 scheduler_token = config['scheduler_token']
+scheddy_token   = config['SCHEDDY_API_MASTER_KEY']
 site_url        = config['site_url']
 guild_id        = int(config['guild_id'])
 FACILITY_ID     = config['FACILITY_ID']
@@ -28,6 +29,8 @@ DTW_SB_ID = int(config['DTW_SB'])
 CLE_SB_ID = int(config['CLE_SB'])
 PIT_SB_ID = int(config['PIT_SB'])
 BUF_SB_ID = int(config['BUF_SB'])
+
+UTC = pytz.UTC
 
 async def syncroles(user, guild , live = False):
     query = site_url+'/api/data/bot/?discord_id='+str(user.id)
@@ -504,81 +507,107 @@ async def updateStatusBoard(guild):
         
 
 async def sendTrainingReminder(guild):
-    
-    bookings = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
-    while (not bookings):
-        bookings = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/appointments',scheduler_token)
-        print("Nothing in Bookings, trying again")
 
+    # Get Sessions from Scheddy
+    # bookings = await schedulerQuery(
+    #     "https://scheddy.clevelandcenter.org/api/allSessions",
+    #     scheddy_token
+    # )
 
-    timenow = datetime.now(pytz.timezone('US/Eastern'))
+    # Testing Remove Later
+    bookings = await schedulerQuery(
+        "https://scheddy.clevelandcenter.org/api/userSessions/1892512",
+        scheddy_token
+    )
 
-    # Get appointments within 1 day.
-    for booking in bookings:
+    now_utc = datetime.now(UTC)
+
+    for booking in bookings or []:
         try:
-            startTime = datetime.strptime(booking['start'],"%Y-%m-%d %H:%M:%S")
-            startTime = startTime.replace(tzinfo=pytz.timezone('US/Eastern'))
+            session = booking["session"]
+            mentor = booking["mentor"]
+            sessionType = booking["sessionType"]
 
-            if (startTime-timenow)<timedelta(days=1) and startTime > timenow:
-                
-                provider = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/providers/'+str(booking['providerId']),scheduler_token)
-                customer = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/customers/'+str(booking['customerId']),scheduler_token)
-                service = await schedulerQuery('https://scheduler.clevelandcenter.org/index.php/api/v1/services/'+str(booking['serviceId']),scheduler_token)
-                
-                #reminders.append([provider['phone'],customer['phone'],service['name'],startTime]) #[provider customer service Starttime]
-                # Get discord info
-                provider_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+provider['phone'],key = site_token)
-                customer_id = await webQuery_async(site_url + '/api/data/bot/user.php?cid='+customer['phone'],key = site_token)
+            if session.get("cancelled"):
+                continue
 
-                #Send out reminder
-                if provider_id:
-                    provider_dc = guild.get_member(int(provider_id['discord_id']))
-                else:
-                    provider_dc = []
-                
-                if customer_id:
-                    customer_dc = guild.get_member(int(customer_id['discord_id']))
-                else:
-                    customer_dc = []
+            # Parse ISO Zulu time
+            start_str = session["start"]
+            start_utc = datetime.fromisoformat(start_str.replace("Z", "+00:00")).astimezone(UTC)
 
+            # within next 24 hours
+            if not (timedelta(0) < (start_utc - now_utc) < timedelta(days=1)):
+                continue
 
-                embed = discord.Embed(colour=0x2664D8, title='Training Session Reminder')
-                embed.add_field(name='Session Name',
-                            value=service['name'],
-                            inline=False)
-                embed.add_field(
-                            name="Date/Time (Eastern)",
-                            value=booking['start'],
-                            inline=False
-                        )
-                if provider_id:
-                    embed.add_field(name='Instructor/Mentor',
-                                value=provider_dc.mention,
-                                inline=False)
-                else:
-                    embed.add_field(name='Instructor/Mentor',
-                                value=provider['first_name']+' '+provider['last_name'],
-                                inline=False)
-                if customer_id:
-                    embed.add_field(name='Student',
-                                value=customer_dc.mention,
-                                inline=False)
-                else:
-                    embed.add_field(name='Student',
-                                value=customer['first_name']+' '+customer['last_name'],
-                                inline=False)
-                embed.add_field(name='Note',
-                            value='Please join the training lobby before your scheduled session time. If you are unable to attend, notify your instructor or mentor as soon as possible.',
-                            inline=False)
-                embed.set_footer(text='Maintained by the v' + FACILITY_ID + ' Web Services Team')
+            # Get discord info
+            provider_id = await webQuery_async(
+                f"{site_url}/api/data/bot/user.php?cid={session['mentor']}",
+                key=site_token
+            )
+            customer_id = await webQuery_async(
+                f"{site_url}/api/data/bot/user.php?cid={session['student']}",
+                key=site_token
+            )
 
-                await provider_dc.send(embed = embed)
-                print("Reminder sent to provider " + provider['firstName']+' '+provider['lastName'] + ', Session ID:' + str(booking['id']))
-                await customer_dc.send(embed = embed)
-                print("Reminder sent to customer " + customer['firstName']+' '+customer['lastName'] + ', Session ID:' + str(booking['id']))
-        
+            provider_dc = None
+            if provider_id and provider_id.get("discord_id"):
+                provider_dc = guild.get_member(int(provider_id["discord_id"]))
+
+            customer_dc = None
+            if customer_id and customer_id.get("discord_id"):
+                customer_dc = guild.get_member(int(customer_id["discord_id"]))
+
+            mentor_tz_name = mentor.get("timezone")
+            student_tz_name = session.get("timezone")
+
+            mentor_tz = pytz.timezone(mentor_tz_name)
+            student_tz = pytz.timezone(student_tz_name)
+
+            start_mentor = start_utc.astimezone(mentor_tz)
+            start_student = start_utc.astimezone(student_tz)
+
+            # Mentor embed
+            embedMentor = discord.Embed(colour=0x2664D8, title="Training Session Reminder")
+            embedMentor.add_field(name="Session Name", value=str(sessionType.get("name","")), inline=False)
+            embedMentor.add_field(name=f"Date/Time ({mentor_tz_name})", value=start_mentor.strftime("%Y-%m-%d %H:%M %Z"), inline=False)
+            embedMentor.add_field(name="Date/Time (Zulu)", value=start_utc.strftime("%Y-%m-%d %H:%MZ"), inline=False)
+            embedMentor.add_field(
+                name="Instructor/Mentor",
+                value=(provider_dc.mention if provider_dc else f"{mentor.get('firstName','')} {mentor.get('lastName','')}".strip()),
+                inline=False
+            )
+            embedMentor.add_field(
+                name="Student",
+                value=(customer_dc.mention if customer_dc else str(session.get("student"))),
+                inline=False
+            )
+            embedMentor.set_footer(text=f"Maintained by the v{FACILITY_ID} Web Services Team")
+
+            if provider_dc:
+                await provider_dc.send(embed=embedMentor)
+
+            # Student embed
+            embedStudent = discord.Embed(colour=0x2664D8, title="Training Session Reminder")
+            embedStudent.add_field(name="Session Name", value=str(sessionType.get("name","")), inline=False)
+            embedStudent.add_field(name=f"Date/Time ({student_tz_name})", value=start_student.strftime("%Y-%m-%d %H:%M %Z"), inline=False)
+            embedStudent.add_field(name="Date/Time (Zulu)", value=start_utc.strftime("%Y-%m-%d %H:%MZ"), inline=False)
+            embedStudent.add_field(
+                name="Instructor/Mentor",
+                value=(provider_dc.mention if provider_dc else f"{mentor.get('firstName','')} {mentor.get('lastName','')}".strip()),
+                inline=False
+            )
+            embedStudent.add_field(
+                name="Student",
+                value=(customer_dc.mention if customer_dc else str(session.get("student"))),
+                inline=False
+            )
+            embedStudent.set_footer(text=f"Maintained by the v{FACILITY_ID} Web Services Team")
+
+            if customer_dc:
+                await customer_dc.send(embed=embedStudent)
+
         except Exception as e:
-            print ("error in sendTrainingReminder(): ") 
+            print("error in sendTrainingReminder():")
             print(e)
 
 async def myAppointment(message,guild):
