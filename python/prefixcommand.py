@@ -557,20 +557,16 @@ async def sendTrainingReminder(guild):
             if customer_id and customer_id.get("discord_id"):
                 customer_dc = guild.get_member(int(customer_id["discord_id"]))
 
-            mentor_tz_name = mentor.get("timezone")
-            student_tz_name = session.get("timezone")
-
-            mentor_tz = pytz.timezone(mentor_tz_name)
-            student_tz = pytz.timezone(student_tz_name)
-
-            start_mentor = start_utc.astimezone(mentor_tz)
-            start_student = start_utc.astimezone(student_tz)
+            # Discord timestamp
+            unix_ts = int(start_utc.timestamp())
+            discord_time = f"<t:{unix_ts}:F>  •  <t:{unix_ts}:R>"
+            zulu_time = start_utc.strftime("%Y-%m-%d %H:%MZ")
 
             # Mentor embed
             embedMentor = discord.Embed(colour=0x2664D8, title="Training Session Reminder")
             embedMentor.add_field(name="Session Name", value=str(sessionType.get("name","")), inline=False)
-            embedMentor.add_field(name=f"Date/Time ({mentor_tz_name})", value=start_mentor.strftime("%Y-%m-%d %H:%M %Z"), inline=False)
-            embedMentor.add_field(name="Date/Time (Zulu)", value=start_utc.strftime("%Y-%m-%d %H:%MZ"), inline=False)
+            embedMentor.add_field(name=f"Date/Time (Local Time)", value=discord_time, inline=False)
+            embedMentor.add_field(name="Date/Time (Zulu)", value=zulu_time, inline=False)
             embedMentor.add_field(
                 name="Instructor/Mentor",
                 value=(provider_dc.mention if provider_dc else f"{mentor.get('firstName','')} {mentor.get('lastName','')}".strip()),
@@ -589,8 +585,8 @@ async def sendTrainingReminder(guild):
             # Student embed
             embedStudent = discord.Embed(colour=0x2664D8, title="Training Session Reminder")
             embedStudent.add_field(name="Session Name", value=str(sessionType.get("name","")), inline=False)
-            embedStudent.add_field(name=f"Date/Time ({student_tz_name})", value=start_student.strftime("%Y-%m-%d %H:%M %Z"), inline=False)
-            embedStudent.add_field(name="Date/Time (Zulu)", value=start_utc.strftime("%Y-%m-%d %H:%MZ"), inline=False)
+            embedStudent.add_field(name=f"Date/Time (Local Time)", value=discord_time, inline=False)
+            embedStudent.add_field(name="Date/Time (Zulu)", value=zulu_time, inline=False)
             embedStudent.add_field(
                 name="Instructor/Mentor",
                 value=(provider_dc.mention if provider_dc else f"{mentor.get('firstName','')} {mentor.get('lastName','')}".strip()),
