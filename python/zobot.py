@@ -186,66 +186,76 @@ async def on_message(message): # all reaction from message
 
 @tasks.loop(seconds=60)
 async def monitor_active_controller():
-    # Load datas
-    actives = await webQuery_async(site_url + '/api/data/bot/activeControllers.php',site_token)
-    # Load existing data or create empty file
+    # Load active controller list
+    actives = await webQuery_async(site_url + '/api/data/bot/activeControllers.php', site_token)
+
+    # Load existing nickname records
     try:
         with open("nicknames.json", "r") as f:
             nicknames = json.load(f)
     except FileNotFoundError:
         nicknames = {}
-    
-    # Change Name to Position
+
     currn_active = set()
+
+    # Process all currently active controllers
     for controller in actives:
-        # current list of controller discord ids
-        currn_active.add(controller['discord_id'])
-        if not nicknames.get(controller['discord_id']):
-            if controller['discord_id']:
-                member = guild.get_member(int(controller['discord_id']))
-                if member:
-                    oldName = member.display_name
+        discord_id = controller['discord_id']
+        if not discord_id:
+            print(f"{controller['cid']} does not have discord linked")
+            continue
 
-                    if controller['type'] == 'Center': #e.g.: RAV48 | OI
-                        newName = centers[controller['position_name'][-2:]] + controller['position_name'][-2:] + ' | ' + controller['OI']
-                    else: #e.g. DTW_F_APP | OI
-                        newName = controller['default_callsign'] + ' | ' + controller['OI']
+        currn_active.add(discord_id)
 
-                    try:
-                        await member.edit(nick=newName)
-                        print(f"Changing nickname for {member.name}")
-                    except discord.Forbidden:
-                        print(f"Missing permission to restore {member.name}")
+        member = guild.get_member(int(discord_id))
+        if not member:
+            print(f"Discord member {discord_id} not found in guild.")
+            continue
 
-                    # add to json file
-                    nicknames[controller['discord_id']] = {
-                        "discord_id": controller['discord_id'],
-                        "original_name": oldName
-                    }
-            else:
-                print(f"{controller['cid']} does not have discord linked")
+        # Determine new nickname based on role
+        if controller['type'] == 'Center':
+            newName = centers[controller['position_name'][-2:]] + controller['position_name'][-2:] + ' | ' + controller['OI']
+        else:
+            newName = controller['default_callsign'] + ' | ' + controller['OI']
 
-    # Restore Name
+        # Save original name if not yet stored
+        if discord_id not in nicknames:
+            nicknames[discord_id] = {
+                "discord_id": discord_id,
+                "original_name": member.display_name
+            }
+
+        # Update nickname if changed (fixes position switching)
+        if member.display_name != newName:
+            try:
+                await member.edit(nick=newName)
+                print(f"Updated nickname for {member.name} → {newName}")
+            except discord.Forbidden:
+                print(f"Missing permission to update nickname for {member.name}")
+
+    # Restore names for controllers who are no longer active
     to_delete = []
-    for discord_id in nicknames:
+    for discord_id, data in nicknames.items():
         if discord_id not in currn_active:
             member = guild.get_member(int(discord_id))
             if member:
-                to_delete.append(discord_id)
                 try:
-                    await member.edit(nick=nicknames[discord_id]['original_name'])
+                    await member.edit(nick=data["original_name"])
                     print(f"Restored nickname for {member.name}")
+                    to_delete.append(discord_id)
                 except discord.Forbidden:
                     print(f"Missing permission to restore nickname for {member.name}")
             else:
                 print(f"Member with Discord ID {discord_id} not found for restoration.")
 
-    # Remove restored users from nicknames dict
+    # Clean up JSON dict
     for discord_id in to_delete:
         del nicknames[discord_id]
-    # save json to file
+
+    # Save updated JSON
     with open("nicknames.json", "w") as f:
-        json.dump(nicknames, f, indent=2)  # indent makes it pretty
+        json.dump(nicknames, f, indent=2)
+
 
 @client.event
 async def on_voice_state_update(member, before, after):
