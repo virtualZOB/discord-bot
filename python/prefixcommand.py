@@ -509,14 +509,8 @@ async def updateStatusBoard(guild):
 async def sendTrainingReminder(guild):
 
     # Get Sessions from Scheddy
-    # bookings = await schedulerQuery(
-    #     "https://scheddy.clevelandcenter.org/api/allSessions",
-    #     scheddy_token
-    # )
-
-    # Testing Remove Later
     bookings = await schedulerQuery(
-        "https://scheddy.clevelandcenter.org/api/userSessions/1892512",
+        "https://scheddy.clevelandcenter.org/api/allSessions",
         scheddy_token
     )
 
