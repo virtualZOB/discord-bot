@@ -378,7 +378,7 @@ async def removeroles(message,guild):
                 user = await guild.fetch_member(usrid)
                 if (user):
                     await user.edit(roles=[])
-                    role = discord.utils.get(guild.roles,name="Visiting Controller")
+                    role = discord.utils.get(guild.roles,name="Pilot")
                     await user.add_roles(role)
                     count += 1
             except Exception as e:
