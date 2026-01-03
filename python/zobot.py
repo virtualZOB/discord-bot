@@ -112,7 +112,7 @@ async def on_message(message): # all reaction from message
         elif(command == "live"):
             await syncroles(message.author,guild,live=True)
             noCommand = False
-        elif(command == "mysession"):
+        elif(command == "mysession" or command == "myappointment"):
             await myAppointment(message,guild)
             noCommand = False
 
