@@ -90,8 +90,12 @@ async def syncroles(user, guild , live = False):
                             fullname = name + ' | MTR'; 
                         else:
                             fullname = name + ' | MIT'; 
+                            role = discord.utils.get(guild.roles,name= "MIT")
+                            await user.add_roles(role)
                     if (usrdata['ins'] == 'Yes'):
                         fullname = name + ' | INS'; 
+                        role = discord.utils.get(guild.roles,name= "Instructors")
+                        await user.add_roles(role)
                     if (not usrdata['staff'] == ''):
                         fullname = name + ' | '+ usrdata['staff']
 
@@ -102,8 +106,6 @@ async def syncroles(user, guild , live = False):
                 # ADD ROLES 
                 role = discord.utils.get(guild.roles,name= "VATSIM Controller")
                 await user.add_roles(role)
-                rating = discord.utils.get(guild.roles,name= usrdata['rating'])
-                await user.add_roles(rating)
 
                 if(usrdata['type']=='vis'):
                     primRole = discord.utils.get(guild.roles,name="Visiting Controller")
@@ -113,11 +115,11 @@ async def syncroles(user, guild , live = False):
 
                 # FACILITY STAFF?
                 if (usrdata['staff'] == "EC" or usrdata['staff'] == "WM" or usrdata['staff'] == "FE" or usrdata['staff'] == "AEC" or usrdata['staff'] == "AWM" or usrdata['staff'] == "AFE"):
-                    staffRole = discord.utils.get(guild.roles,name= "Facility Staff")
+                    staffRole = discord.utils.get(guild.roles,name= "ZOB Facility Staff")
                     await user.add_roles(staffRole)
 
                 if (usrdata['staff'] == "WT" or usrdata['staff'] == "ET" or usrdata['staff'] == "FET"):
-                    staffRole = discord.utils.get(guild.roles,name= "Facility Team Member")
+                    staffRole = discord.utils.get(guild.roles,name= "ZOB Facility Staff")
                     await user.add_roles(staffRole)
 
                 # TRAINING STAFF?

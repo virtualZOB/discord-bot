@@ -26,7 +26,6 @@ site_url        = config['site_url']
 guild_id        = int(config['guild_id'])
 FACILITY_ID     = config['prefix']
 FACILITY_NAME   = config['prefix']
-SP_Channel_ID   = int(config['SP_Channel_ID'])
 SNR_Channel_ID  = int(config['SNR_Channel_ID'])
 
 guild = []
@@ -84,13 +83,15 @@ async def on_member_join(member):
 
 @client.event
 async def on_raw_reaction_add(payload):
-    if(str(payload.emoji) == '📢' and payload.channel_id == int(SP_Channel_ID) and not payload.member.bot):
+    channel = discord.utils.get(guild.channels,id = payload.channel_id)
+    if(str(payload.emoji) == '📢' and channel.name == "spontaneous-training" and not payload.member.bot):
         await payload.member.add_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
 
 @client.event
 async def on_raw_reaction_remove(payload):
-    member = discord.utils.get(guild.members, id = payload.user_id)
-    if(str(payload.emoji) == '📢' and payload.channel_id == int(SP_Channel_ID) and not member.bot):
+    member = discord.utils.get(guild.members,id = payload.user_id)
+    channel = discord.utils.get(guild.channels,id = payload.channel_id) 
+    if(str(payload.emoji) == '📢' and channel.name == "spontaneous-training") and not member.bot:
         await member.remove_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
 
 @client.event
@@ -260,9 +261,9 @@ async def monitor_active_controller():
 @client.event
 async def on_voice_state_update(member, before, after):
     act_role = discord.utils.get(guild.roles,name= "Active Controller")
-    if (after.channel == None or not after.channel.category.name == 'Controlling Floor'):
+    if (after.channel == None or not after.channel.category.name == 'Sterile Controlling Floor'):
         await member.remove_roles(act_role)
-    elif(after.channel.category.name == 'Controlling Floor'):
+    elif(after.channel.category.name == 'Sterile Controlling Floor'):
         await member.add_roles(act_role)
         
 @tasks.loop(seconds=900)       
@@ -280,7 +281,7 @@ reminderTime = datetime.time(hour=7, minute=0, tzinfo=pytz.timezone('US/Eastern'
 @tasks.loop(time = reminderTime)
 async def reminder_task():
     await sendTrainingReminder(guild)
-    await waitlist(guild)
+    #await waitlist(guild)
     print("Reminder Sent!")
 
 client.run(discord_token)
