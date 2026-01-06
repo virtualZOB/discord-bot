@@ -59,7 +59,7 @@ async def on_ready():
     #guild = await client.fetch_guild(guild_id)
 
     SENIOR_STAFF    =  discord.utils.get(guild.roles,name="Senior Staff")
-    FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
+    FACILITY_STAFF  =  discord.utils.get(guild.roles,name="ZOB Facility Staff")
     TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
     WM              =  discord.utils.get(guild.roles,name="WM")
 
