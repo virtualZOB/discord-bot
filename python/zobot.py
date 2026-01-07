@@ -59,7 +59,7 @@ async def on_ready():
     #guild = await client.fetch_guild(guild_id)
 
     SENIOR_STAFF    =  discord.utils.get(guild.roles,name="Senior Staff")
-    FACILITY_STAFF  =  discord.utils.get(guild.roles,name="ZOB Facility Staff")
+    FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
     TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
     WM              =  discord.utils.get(guild.roles,name="WM")
 
@@ -299,11 +299,8 @@ async def on_scheduled_event_update(before,after):
 
         # Create a thread with the same name as the event
         thread = await channel.create_thread(
-            name="[Debreif]"+after.name,
+            name="[debrief]"+after.name,
             type=discord.ChannelType.public_thread,
             auto_archive_duration=4320  # 72 hours
-        )
-        await thread.send(
-            f"Event debrief starts here!\n"
         )
 client.run(discord_token)
