@@ -801,7 +801,9 @@ async def send_relief_workload_alert(
         return False
     _last_workload_alert[key] = now
 
-    sp_role = discord.utils.get(guild.roles,name="Relief")
+    # sp_role = discord.utils.get(guild.roles,name="Relief")
+
+    mention = "@here" if alert_type == "relief" else None
 
     channel = guild.get_channel(Relief_Channel_ID)
     if channel is None:
@@ -833,9 +835,9 @@ async def send_relief_workload_alert(
     embed.set_footer(text=f"Maintained by the v{FACILITY_ID} Web Services Team")
 
     await channel.send(
-        content=(sp_role.mention if sp_role else None),
+        content=(mention),
         embed=embed,
-        allowed_mentions=discord.AllowedMentions(roles=True),
+        allowed_mentions=discord.AllowedMentions(everyone=True),
         delete_after=3600.0 #auto delete after 1 hr
     )
     return True
