@@ -284,4 +284,26 @@ async def reminder_task():
     #await waitlist(guild)
     print("Reminder Sent!")
 
+#Create thread when event starts
+@client.event
+async def on_scheduled_event_update(before,after):
+    # Detect transition to "active" (event starting)
+    if (
+        before.status != discord.EventStatus.active
+        and after.status == discord.EventStatus.active
+    ):
+        channel = discord.utils.get(guild.channels,name = "event-debrief")
+        if channel is None:
+            print("Thread parent channel not found")
+            return
+
+        # Create a thread with the same name as the event
+        thread = await channel.create_thread(
+            name="[Debreif]"+after.name,
+            type=discord.ChannelType.public_thread,
+            auto_archive_duration=4320  # 72 hours
+        )
+        await thread.send(
+            f"Event debrief starts here!\n"
+        )
 client.run(discord_token)
