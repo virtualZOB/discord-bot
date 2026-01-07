@@ -698,16 +698,12 @@ async def requestRelief(message, command, guild):
     if message.channel.id != Relief_Channel_ID:
         return await message.author.send("**ERROR**\n Incorrect Channel")
 
-    content = message.content.replace(prefix + command, "", 1).strip()
+    # Example message: "!relief 15 mins"
+    # Remove the command token only once
+    eta_text = message.content.replace(prefix + command, "", 1).strip()
 
-    if "t:" not in content:
-        return await message.author.send("**ERROR**\n Missing Parameter `t:` (example: `!relief t:15 mins`)")
-
-    # Everything after t: is the requested time / ETA text
-    decoded = content.split("t:", 1)
-    eta_text = decoded[1].strip()
     if not eta_text:
-        return await message.author.send("**ERROR**\n Missing time after `t:`")
+        return await message.author.send("**ERROR**\n Missing time. Example: `!relief 15 mins`")
 
     # 1) Get CID from Discord ID
     try:
@@ -768,16 +764,21 @@ async def requestRelief(message, command, guild):
         pilot_count = len(match_bucket.get("pilots") or [])
     pilot_count = int(pilot_count)
 
-    # 4) Send relief request
-    return await send_relief_workload_alert(
+    # Optional: don't rate-limit manual relief requests
+    cooldown = 0
+
+    sent = await send_relief_workload_alert(
         alert_type="relief",
         guild=guild,
         callsign=callsign,
         on_frequency=pilot_count,
         frequency=freq,
-        cooldown_seconds=20 * 60,
-        eta=eta_text
+        cooldown_seconds=cooldown,
+        eta=eta_text,
     )
+
+    if not sent:
+        return await message.author.send("**ERROR**\n Relief request was not sent (cooldown or channel issue).")
 
 
 async def send_relief_workload_alert(
