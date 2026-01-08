@@ -241,7 +241,29 @@ async def monitor_active_controller():
                 print(f"Updated nickname for {member.name} → {newName}")
             except discord.Forbidden:
                 print(f"Missing permission to update nickname for {member.name}")
+                
+        # Restore names for controllers who are no longer active
+        to_delete = []
+        for discord_id, data in nicknames.items():
+            if discord_id not in currn_active:
+                member = guild.get_member(int(discord_id))
+                if member:
+                    try:
+                        await member.edit(nick=data["original_name"])
+                        print(f"Restored nickname for {member.name}")
+                        to_delete.append(discord_id)
+                    except discord.Forbidden:
+                        print(f"Missing permission to restore nickname for {member.name}")
+                else:
+                    print(f"Member with Discord ID {discord_id} not found for restoration.")
 
+        # Clean up JSON dict
+        for discord_id in to_delete:
+            del nicknames[discord_id]
+
+        # Save updated JSON
+        with open("nicknames.json", "w") as f:
+            json.dump(nicknames, f, indent=2)
     # if controllers exist, check to see if their si a lot of pilots on their frequency
     if actives:
         try:
@@ -290,28 +312,7 @@ async def monitor_active_controller():
                 cooldown_seconds=20 * 60,
             )
 
-    # Restore names for controllers who are no longer active
-    to_delete = []
-    for discord_id, data in nicknames.items():
-        if discord_id not in currn_active:
-            member = guild.get_member(int(discord_id))
-            if member:
-                try:
-                    await member.edit(nick=data["original_name"])
-                    print(f"Restored nickname for {member.name}")
-                    to_delete.append(discord_id)
-                except discord.Forbidden:
-                    print(f"Missing permission to restore nickname for {member.name}")
-            else:
-                print(f"Member with Discord ID {discord_id} not found for restoration.")
 
-    # Clean up JSON dict
-    for discord_id in to_delete:
-        del nicknames[discord_id]
-
-    # Save updated JSON
-    with open("nicknames.json", "w") as f:
-        json.dump(nicknames, f, indent=2)
 
 @client.event
 async def on_voice_state_update(member, before, after):
