@@ -63,7 +63,7 @@ async def on_ready():
     #guild = await client.fetch_guild(guild_id)
 
     SENIOR_STAFF    =  discord.utils.get(guild.roles,name="Senior Staff")
-    FACILITY_STAFF  =  discord.utils.get(guild.roles,name="Facility Staff")
+    FACILITY_STAFF  =  discord.utils.get(guild.roles,name="ZOB Facility Staff")
     TRAINING_STAFF  =  discord.utils.get(guild.roles,name="Training Staff")
     WM              =  discord.utils.get(guild.roles,name="WM")
 
@@ -241,7 +241,7 @@ async def monitor_active_controller():
                 print(f"Updated nickname for {member.name} → {newName}")
             except discord.Forbidden:
                 print(f"Missing permission to update nickname for {member.name}")
-                
+
         # Restore names for controllers who are no longer active
         to_delete = []
         for discord_id, data in nicknames.items():
