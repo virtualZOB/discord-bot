@@ -4,6 +4,7 @@ import discord
 from datetime import datetime, timedelta
 import requests
 import pytz
+from typing import Optional
 
 from time import time
 import html
@@ -24,7 +25,6 @@ FACILITY_ID     = config['FACILITY_ID']
 FACILITY_NAME   = config['FACILITY_NAME']
 SP_Channel_ID   = int(config['SP_Channel_ID'])
 SNR_Channel_ID  = int(config['SNR_Channel_ID'])
-Relief_Channel_ID = int(config['Relief_Channel_ID'])
 
 DTW_SB_ID = int(config['DTW_SB'])
 CLE_SB_ID = int(config['CLE_SB'])
@@ -695,7 +695,11 @@ async def myAppointment(message,guild):
         await message.author.send(content = "There is an error occurs when getting the data. Please try again later.")
 
 async def requestRelief(message, command, guild):
+    Relief_Channel_ID = discord.utils.get(guild.channels,name = "wm-chat") 
+    Relief_Channel_ID = Relief_Channel_ID.id
     if message.channel.id != Relief_Channel_ID:
+        await message.author.send(message.channel.id)
+        await message.author.send(Relief_Channel_ID)
         return await message.author.send("**ERROR**\n Incorrect Channel")
 
     # Example message: "!relief 15 mins"
@@ -787,9 +791,9 @@ async def send_relief_workload_alert(
     guild: discord.Guild,
     callsign: str,
     on_frequency: int,
-    frequency: str | None = None,
+    frequency: Optional[str] = None,
     cooldown_seconds: int = 20 * 60,
-    eta: str | None = None,
+    eta: Optional[str] = None,
 ) -> bool:
     if not callsign:
         return False
@@ -805,12 +809,9 @@ async def send_relief_workload_alert(
 
     mention = "@here" if alert_type == "relief" else None
 
-    channel = guild.get_channel(Relief_Channel_ID)
+    channel = discord.utils.get(guild.channels,name = "wm-chat") 
     if channel is None:
-        try:
-            channel = await guild.fetch_channel(Relief_Channel_ID)
-        except Exception:
-            return False
+        print("Channel not found in send_relief_workload_alert()")
 
     title = "Controller Assistance Alert"
     if (alert_type == "workload"):
