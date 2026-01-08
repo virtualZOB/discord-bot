@@ -242,75 +242,72 @@ async def monitor_active_controller():
             except discord.Forbidden:
                 print(f"Missing permission to update nickname for {member.name}")
 
-        # Restore names for controllers who are no longer active
-        to_delete = []
-        for discord_id, data in nicknames.items():
-            if discord_id not in currn_active:
-                member = guild.get_member(int(discord_id))
-                if member:
-                    try:
-                        await member.edit(nick=data["original_name"])
-                        print(f"Restored nickname for {member.name}")
-                        to_delete.append(discord_id)
-                    except discord.Forbidden:
-                        print(f"Missing permission to restore nickname for {member.name}")
-                else:
-                    print(f"Member with Discord ID {discord_id} not found for restoration.")
+    # Restore names for controllers who are no longer active
+    to_delete = []
+    for discord_id, data in nicknames.items():
+        if discord_id not in currn_active:
+            member = guild.get_member(int(discord_id))
+            if member:
+                try:
+                    await member.edit(nick=data["original_name"])
+                    print(f"Restored nickname for {member.name}")
+                    to_delete.append(discord_id)
+                except discord.Forbidden:
+                    print(f"Missing permission to restore nickname for {member.name}")
+            else:
+                print(f"Member with Discord ID {discord_id} not found for restoration.")
 
-        # Clean up JSON dict
-        for discord_id in to_delete:
-            del nicknames[discord_id]
+    # Clean up JSON dict
+    for discord_id in to_delete:
+        del nicknames[discord_id]
 
-        # Save updated JSON
-        with open("nicknames.json", "w") as f:
-            json.dump(nicknames, f, indent=2)
+    # Save updated JSON
+    with open("nicknames.json", "w") as f:
+        json.dump(nicknames, f, indent=2)
+
     # if controllers exist, check to see if their si a lot of pilots on their frequency
     if actives:
         try:
             workload = await webQuery_async(site_url + "/api/data/ids/workload?json=1", site_token)
         except Exception as e:
             print(f"workload fetch failed: {e}")
-            return
 
         buckets = (workload or {}).get("controllers", [])
-        if not isinstance(buckets, list) or not buckets:
-            return
+        if isinstance(buckets, list) and buckets:
 
-        alerts: list[tuple[str, int, str]] = []  # (callsign, pilot_count, frequency)
+            alerts: list[tuple[str, int, str]] = []  # (callsign, pilot_count, frequency)
 
-        for b in buckets:
-            freq = (b or {}).get("frequency")
-            if not freq:
-                continue
+            for b in buckets:
+                freq = (b or {}).get("frequency")
+                if not freq:
+                    continue
 
-            pilot_count = b.get("pilot_count")
-            if pilot_count is None:
-                pilot_count = len(b.get("pilots") or [])
-            pilot_count = int(pilot_count)
+                pilot_count = b.get("pilot_count")
+                if pilot_count is None:
+                    pilot_count = len(b.get("pilots") or [])
+                pilot_count = int(pilot_count)
 
-            if pilot_count <= ALERT_THRESHOLD:
-                continue
+                if pilot_count <= ALERT_THRESHOLD:
+                    continue
 
-            # workload payload controllers on that frequency
-            ctrls = b.get("controllers") or []
-            for c in ctrls:
-                callsign = c.get("callsign") or c.get("vnas_callsign")
-                if callsign:
-                    alerts.append((callsign, pilot_count, freq))
+                # workload payload controllers on that frequency
+                ctrls = b.get("controllers") or []
+                for c in ctrls:
+                    callsign = c.get("callsign") or c.get("vnas_callsign")
+                    if callsign:
+                        alerts.append((callsign, pilot_count, freq))
 
-        if not alerts:
-            return
-
-        # Send alerts
-        for callsign, count_on_freq, freq in alerts:
-            await send_relief_workload_alert(
-                alert_type="workload",
-                guild=guild,
-                callsign=callsign,
-                on_frequency=count_on_freq,
-                frequency=freq,
-                cooldown_seconds=20 * 60,
-            )
+            if alerts:
+                # Send alerts
+                for callsign, count_on_freq, freq in alerts:
+                    await send_relief_workload_alert(
+                        alert_type="workload",
+                        guild=guild,
+                        callsign=callsign,
+                        on_frequency=count_on_freq,
+                        frequency=freq,
+                        cooldown_seconds=20 * 60,
+                    )
 
 
 
