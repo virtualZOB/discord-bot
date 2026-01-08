@@ -2,6 +2,7 @@ import discord
 import configparser
 from prefixcommand import *
 import time
+from zoneinfo import ZoneInfo
 import pytz
 import datetime
 from discord.ext import tasks, commands
@@ -277,7 +278,7 @@ async def quaterHourLooped_tasks():
 async def dayilyLooped_tasks():
     pass
 
-reminderTime = datetime.time(hour=7, minute=0, tzinfo=pytz.timezone('US/Eastern'))
+reminderTime = datetime.time(7, 0, tzinfo=ZoneInfo("America/New_York"))
 @tasks.loop(time = reminderTime)
 async def reminder_task():
     await sendTrainingReminder(guild)
