@@ -40,7 +40,7 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
 #Relief Settings
-ALERT_THRESHOLD = 30
+ALERT_THRESHOLD = 35
 
 L_TREQ = []
 
@@ -120,7 +120,7 @@ async def on_message(message): # all reaction from message
         elif(command == "mysession" or command == "myappointment"):
             await myAppointment(message,guild)
             noCommand = False
-        elif command == "relief":
+        elif command == "relief" or command == "closing":
             await requestRelief(message,command,guild)
             noCommand = False
 
