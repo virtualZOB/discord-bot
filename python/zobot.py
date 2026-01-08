@@ -39,6 +39,9 @@ WM              = []
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
+#Relief Settings
+ALERT_THRESHOLD = 30
+
 L_TREQ = []
 
 # Load center name
@@ -117,6 +120,10 @@ async def on_message(message): # all reaction from message
         elif(command == "mysession" or command == "myappointment"):
             await myAppointment(message,guild)
             noCommand = False
+        elif command == "relief":
+            await requestRelief(message,command,guild)
+            noCommand = False
+
 
 
         if(SENIOR_STAFF in message.author.roles or FACILITY_STAFF in message.author.roles or TRAINING_STAFF in message.author.roles):
@@ -235,6 +242,54 @@ async def monitor_active_controller():
             except discord.Forbidden:
                 print(f"Missing permission to update nickname for {member.name}")
 
+    # if controllers exist, check to see if their si a lot of pilots on their frequency
+    if actives:
+        try:
+            workload = await webQuery_async(site_url + "/api/data/ids/workload?json=1", site_token)
+        except Exception as e:
+            print(f"workload fetch failed: {e}")
+            return
+
+        buckets = (workload or {}).get("controllers", [])
+        if not isinstance(buckets, list) or not buckets:
+            return
+
+        alerts: list[tuple[str, int, str]] = []  # (callsign, pilot_count, frequency)
+
+        for b in buckets:
+            freq = (b or {}).get("frequency")
+            if not freq:
+                continue
+
+            pilot_count = b.get("pilot_count")
+            if pilot_count is None:
+                pilot_count = len(b.get("pilots") or [])
+            pilot_count = int(pilot_count)
+
+            if pilot_count <= ALERT_THRESHOLD:
+                continue
+
+            # workload payload controllers on that frequency
+            ctrls = b.get("controllers") or []
+            for c in ctrls:
+                callsign = c.get("callsign") or c.get("vnas_callsign")
+                if callsign:
+                    alerts.append((callsign, pilot_count, freq))
+
+        if not alerts:
+            return
+
+        # Send alerts
+        for callsign, count_on_freq, freq in alerts:
+            await send_relief_workload_alert(
+                alert_type="workload",
+                guild=guild,
+                callsign=callsign,
+                on_frequency=count_on_freq,
+                frequency=freq,
+                cooldown_seconds=20 * 60,
+            )
+
     # Restore names for controllers who are no longer active
     to_delete = []
     for discord_id, data in nicknames.items():
@@ -257,7 +312,6 @@ async def monitor_active_controller():
     # Save updated JSON
     with open("nicknames.json", "w") as f:
         json.dump(nicknames, f, indent=2)
-
 
 @client.event
 async def on_voice_state_update(member, before, after):

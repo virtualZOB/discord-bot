@@ -24,11 +24,14 @@ FACILITY_ID     = config['FACILITY_ID']
 FACILITY_NAME   = config['FACILITY_NAME']
 SP_Channel_ID   = int(config['SP_Channel_ID'])
 SNR_Channel_ID  = int(config['SNR_Channel_ID'])
+Relief_Channel_ID = int(config['Relief_Channel_ID'])
 
 DTW_SB_ID = int(config['DTW_SB'])
 CLE_SB_ID = int(config['CLE_SB'])
 PIT_SB_ID = int(config['PIT_SB'])
 BUF_SB_ID = int(config['BUF_SB'])
+
+_last_workload_alert: dict[str, float] = {}
 
 UTC = pytz.UTC
 
@@ -690,3 +693,151 @@ async def myAppointment(message,guild):
         print(e)
 
         await message.author.send(content = "There is an error occurs when getting the data. Please try again later.")
+
+async def requestRelief(message, command, guild):
+    if message.channel.id != Relief_Channel_ID:
+        return await message.author.send("**ERROR**\n Incorrect Channel")
+
+    # Example message: "!relief 15 mins"
+    # Remove the command token only once
+    eta_text = message.content.replace(prefix + command, "", 1).strip()
+
+    if not eta_text:
+        return await message.author.send("**ERROR**\n Missing time. Example: `!relief 15 mins`")
+
+    # 1) Get CID from Discord ID
+    try:
+        user = await webQuery_async(
+            site_url + "/api/data/bot/discordID2CID.php?discord_id=" + str(message.author.id),
+            key=site_token
+        )
+    except Exception as e:
+        print("discordID2CID fetch failed:", e)
+        return await message.author.send("**ERROR**\n Unable to look up your CID right now.")
+
+    if not user or not user.get("cid"):
+        return await message.author.send("**ERROR**\n I cannot find your CID (is your account linked?).")
+
+    try:
+        cid = int(user["cid"])
+    except Exception:
+        return await message.author.send("**ERROR**\n CID returned was invalid.")
+
+    # 2) Pull workload API
+    try:
+        workload = await webQuery_async(
+            site_url + "/api/data/ids/workload?json=1",
+            key=site_token
+        )
+    except Exception as e:
+        print("workload fetch failed:", e)
+        return await message.author.send("**ERROR**\n Unable to read workload data right now.")
+
+    buckets = (workload or {}).get("controllers", [])
+    if not isinstance(buckets, list) or not buckets:
+        return await message.author.send("**ERROR**\n Workload data was empty.")
+
+    # 3) Match CID inside workload controllers
+    match_bucket = None
+    match_ctrl = None
+
+    for b in buckets:
+        for c in (b or {}).get("controllers", []) or []:
+            try:
+                if int(c.get("cid", -1)) == cid:
+                    match_bucket = b
+                    match_ctrl = c
+                    break
+            except Exception:
+                continue
+        if match_bucket:
+            break
+
+    if not match_bucket or not match_ctrl:
+        return await message.author.send("**ERROR**\n I don’t see you on an active frequency right now.")
+
+    callsign = match_ctrl.get("callsign") or match_ctrl.get("vnas_callsign") or "UNKNOWN"
+    freq = (match_bucket.get("frequency") or "").strip()
+
+    pilot_count = match_bucket.get("pilot_count")
+    if pilot_count is None:
+        pilot_count = len(match_bucket.get("pilots") or [])
+    pilot_count = int(pilot_count)
+
+    # Optional: don't rate-limit manual relief requests
+    cooldown = 0
+
+    sent = await send_relief_workload_alert(
+        alert_type="relief",
+        guild=guild,
+        callsign=callsign,
+        on_frequency=pilot_count,
+        frequency=freq,
+        cooldown_seconds=cooldown,
+        eta=eta_text,
+    )
+
+    if not sent:
+        return await message.author.send("**ERROR**\n Relief request was not sent (cooldown or channel issue).")
+
+
+async def send_relief_workload_alert(
+    *,
+    alert_type: str,              # "workload" or "relief"
+    guild: discord.Guild,
+    callsign: str,
+    on_frequency: int,
+    frequency: str | None = None,
+    cooldown_seconds: int = 20 * 60,
+    eta: str | None = None,
+) -> bool:
+    if not callsign:
+        return False
+
+    key = f"{alert_type}|{callsign}|{frequency or ''}"
+    now = time()
+    last = _last_workload_alert.get(key, 0.0)
+    if (now - last) < cooldown_seconds:
+        return False
+    _last_workload_alert[key] = now
+
+    # sp_role = discord.utils.get(guild.roles,name="Relief")
+
+    mention = "@here" if alert_type == "relief" else None
+
+    channel = guild.get_channel(Relief_Channel_ID)
+    if channel is None:
+        try:
+            channel = await guild.fetch_channel(Relief_Channel_ID)
+        except Exception:
+            return False
+
+    title = "Controller Assistance Alert"
+    if (alert_type == "workload"):
+        title = "Controller Workload is High"
+    elif (alert_type == "relief"):
+        title = "Controller Relief Requested"
+
+    embed = discord.Embed(
+        title=title,
+        description="",
+        color=0x2664D8,
+    )
+    embed.add_field(name="Callsign", value=str(callsign), inline=False)
+
+    if frequency:
+        embed.add_field(name="Frequency", value=str(frequency), inline=True)
+
+    embed.add_field(name="Active on Frequency", value=str(on_frequency), inline=True)
+    if eta: 
+        embed.add_field(name="Relieve by (ETA)", value=str(eta), inline=False)
+
+    embed.set_footer(text=f"Maintained by the v{FACILITY_ID} Web Services Team")
+
+    await channel.send(
+        content=(mention),
+        embed=embed,
+        allowed_mentions=discord.AllowedMentions(everyone=True),
+        delete_after=3600.0 #auto delete after 1 hr
+    )
+    return True
