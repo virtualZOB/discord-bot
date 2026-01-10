@@ -212,6 +212,25 @@ async def welcomeMessage(message):
     await message.channel.send(embed = embed)
     return
 
+async def optionalRolesMessage(guild):
+    channel = discord.utils.get(guild.channels,name="role-assignments")
+    embed = discord.Embed(colour=0x2664D8, title='Optional Roles')
+    embed.add_field(name='Why Optional Roles?',
+                value='Optional roles in Discord help reduce unwanted pings by letting members choose which notifications they receive. This prevents notification fatigue, avoids overusing @everyone mentions, and ensures messages reach only interested users, creating a cleaner and more respectful server experience.',
+                inline=False)
+    embed.add_field(name='Group Flight Role ✈️',
+            value='Click this role to sign up for community group flights—all pilots are welcome.',
+            inline=False)
+    embed.add_field(name='Game Night Role 🎮',
+            value='Click this role to join community game nights—all users are welcome.',
+            inline=False)
+    embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team')
+
+    msg = await channel.send(embed = embed)
+    await msg.add_reaction('✈️')
+    await msg.add_reaction('🎮')
+
+
 async def spontaneous_embed(message):
     embed = discord.Embed(colour=0x2664D8, title='Spontaneous Training', url=site_url)
     embed.add_field(name='What is Spontaneous Training?',
@@ -710,15 +729,17 @@ async def myAppointment(message,guild):
 
 async def requestRelief(message, command, guild):
     try:
-        user = await webQuery_async(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
+        try:
+            user = await webQuery_async(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
+        except Exception as e:
+            print("discordID2CID fetch failed:", e)
+            return await message.author.send("**ERROR**\n Unable to look up your CID right now.")
 
         if not user:
-            await message.author.send(content = "I cannot find your information in the system. Please link your discord with the ZOB website.")
-            return
+            return await message.author.send(content = "I cannot find your information in the system. Please link your discord with the ZOB website.")
         
         if not has_rating_at_least(user or {}, "S3", require_full=False):
-            await message.author.send(content="You must be S3 or above to request relief.")
-            return
+            return await message.author.send(content="You must be S3 or above to request relief.")
 
         Relief_Channel_ID = discord.utils.get(guild.channels,name = "wm-chat") 
         Relief_Channel_ID = Relief_Channel_ID.id
@@ -735,15 +756,6 @@ async def requestRelief(message, command, guild):
             return await message.author.send("**ERROR**\n Missing time. Example: `!relief 15 mins`")
 
         # 1) Get CID from Discord ID
-        try:
-            user = await webQuery_async(
-                site_url + "/api/data/bot/discordID2CID.php?discord_id=" + str(message.author.id),
-                key=site_token
-            )
-        except Exception as e:
-            print("discordID2CID fetch failed:", e)
-            return await message.author.send("**ERROR**\n Unable to look up your CID right now.")
-
         if not user or not user.get("cid"):
             return await message.author.send("**ERROR**\n I cannot find your CID (is your account linked?).")
 
