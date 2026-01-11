@@ -24,7 +24,6 @@ site_url        = config['site_url']
 guild_id        = int(config['guild_id'])
 FACILITY_ID     = config['FACILITY_ID']
 FACILITY_NAME   = config['FACILITY_NAME']
-SP_Channel_ID   = int(config['SP_Channel_ID'])
 SNR_Channel_ID  = int(config['SNR_Channel_ID'])
 
 DTW_SB_ID = int(config['DTW_SB'])
@@ -256,7 +255,7 @@ async def spontaneous_embed(message):
     return
 
 async def spontaneous(message,command,guild):
-    if (message.channel.id == SP_Channel_ID):
+    if (message.channel.name == "spontaneous-training"):
         content = message.content.replace(prefix+command,"")
         limit = []
         if "l:" in message.content:
@@ -309,7 +308,7 @@ async def spontaneous(message,command,guild):
         await message.author.send("Incorrect Channel")
 
 async def trainingRequest(message,command,guild):
-    if (message.channel.id == SP_Channel_ID):
+    if (message.channel.name == "spontaneous-training"):
         content = message.content.replace(prefix+command,"")
         if "t:" in content:
             decoded = content.split("t:")
@@ -336,39 +335,6 @@ async def trainingRequest(message,command,guild):
             )
             embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
             await message.channel.send(embed = embed, delete_after=432000.0) #auto delete after 12 hrs
-        else:
-            await message.author.send('**ERROR**\n Missing Parameter')
-    else:
-        await message.author.send('**ERROR**\n Incorrect Channel')
-
-async def trainingRequest(message,command,guild):
-    if (message.channel.id == SP_Channel_ID):
-        content = message.content.replace(prefix+command,"")
-        if "t:" in content:
-            decoded = content.split("t:")
-            time = decoded[1]
-            embed = discord.Embed(
-                color=0xFFCC00,
-                title="Training Request",
-                url=site_url
-            )
-            embed.add_field(
-                name="Student",
-                value=f'<@{message.author.id}>',
-                inline=False
-            )
-            embed.add_field(
-                name="Session Type",
-                value=decoded[0],
-                inline=False
-            )
-            embed.add_field(
-                name="Date/Time",
-                value=time,
-                inline=False
-            )
-            embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
-            return await message.channel.send(embed = embed, delete_after=432000.0) #auto delete after 12 hrs
         else:
             await message.author.send('**ERROR**\n Missing Parameter')
     else:
@@ -727,7 +693,24 @@ async def myAppointment(message,guild):
 
         await message.author.send(content = "There is an error occurs when getting the data. Please try again later.")
 
-async def requestRelief(message, command, guild):
+
+async def reliefEmbed(guild):
+    channel = discord.utils.get(guild.channels,name="relief")
+    embed = discord.Embed(colour=0x2664D8, title='Relief Rules')
+    embed.add_field(name='What is this?',
+                value='This channel is designated for relief calls when you are closing or requesting underlying facility coverage due to high demand. Access to this function is currently limited to **S3 and above**.',
+                inline=False)
+    embed.add_field(name='How to use is?',
+            value=("**!relief [time]** – Notify others when you are requesting relief\n"
+                    "**!closing [time]** – Notify when you are closing your position\n"
+                    "**!helpme [position]** – Request coverage for a specific underlying facility"),
+            inline=False)
+    embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team')
+
+    msg = await channel.send(embed = embed)
+
+
+async def requestRelief(message, command, guild, alert_type):
     try:
         try:
             user = await webQuery_async(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
@@ -741,7 +724,7 @@ async def requestRelief(message, command, guild):
         if not has_rating_at_least(user or {}, "S3", require_full=False):
             return await message.author.send(content="You must be S3 or above to request relief.")
 
-        Relief_Channel_ID = discord.utils.get(guild.channels,name = "wm-chat") 
+        Relief_Channel_ID = discord.utils.get(guild.channels,name = "relief") 
         Relief_Channel_ID = Relief_Channel_ID.id
         if message.channel.id != Relief_Channel_ID:
             await message.author.send(message.channel.id)
@@ -753,7 +736,7 @@ async def requestRelief(message, command, guild):
         eta_text = message.content.replace(prefix + command, "", 1).strip()
 
         if not eta_text:
-            return await message.author.send("**ERROR**\n Missing time. Example: `!relief 15 mins`")
+            return await message.author.send("**ERROR**\n Missing time or position. Example: `!relief 15 mins`")
 
         # 1) Get CID from Discord ID
         if not user or not user.get("cid"):
@@ -809,7 +792,7 @@ async def requestRelief(message, command, guild):
         cooldown = 0
 
         sent = await send_relief_workload_alert(
-            alert_type="relief",
+            alert_type=alert_type,
             guild=guild,
             callsign=callsign,
             on_frequency=pilot_count,
@@ -983,7 +966,7 @@ async def send_relief_workload_alert(
         return False
     _last_workload_alert[key] = now
 
-    channel = discord.utils.get(guild.channels, name="wm-chat")
+    channel = discord.utils.get(guild.channels, name="relief")
     if channel is None:
         print("Channel not found in send_relief_workload_alert()")
         return False
@@ -1005,16 +988,20 @@ async def send_relief_workload_alert(
     embed.add_field(name="Active on Frequency", value=str(on_frequency), inline=True)
 
     if eta:
-        embed.add_field(name="Relieve by (ETA)", value=str(eta), inline=False)
+        if alert_type == "workload":
+            embed.add_field(name="Requesting help on", value=str(eta), inline=False)
+        else:
+            embed.add_field(name="Relieve by (ETA)", value=str(eta), inline=False)
 
     embed.set_footer(text=f"Maintained by the v{FACILITY_ID} Web Services Team")
 
     content = None
 
-    mentions = await build_relief_ping_list(guild=guild, channel=channel, callsign=callsign)
+    #mentions = await build_relief_ping_list(guild=guild, channel=channel, callsign=callsign)
 
-    content = " ".join(mentions) if mentions else "@here"
+    content = "@here"
 
+    '''
     # If content is huge, split it (Discord 2000 char limit)
     if content and len(content) > 1900:
         chunks = []
@@ -1042,7 +1029,7 @@ async def send_relief_workload_alert(
                 delete_after=3600.0
             )
         return True
-
+    '''
     await channel.send(
         content=content,
         embed=embed,

@@ -88,9 +88,9 @@ async def on_raw_reaction_add(payload):
     if(str(payload.emoji) == '📢' and channel.name == "spontaneous-training" and not payload.member.bot):
         await payload.member.add_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
     elif(str(payload.emoji) == '✈️') and channel.name == "role-assignments" and not payload.member.bot:
-        await payload.member.add_roles(discord.utils.get(guild.roles,name="Group Flight"))
+        await payload.member.add_roles(discord.utils.get(guild.roles,name="Group Flights"))
     elif(str(payload.emoji) == '🎮') and channel.name == "role-assignments" and not payload.member.bot:
-        await payload.member.add_roles(discord.utils.get(guild.roles,name="Game Night"))
+        await payload.member.add_roles(discord.utils.get(guild.roles,name="Game nights"))
     elif(str(payload.emoji) == '✅') and channel.name == "spontaneous-training" and not payload.member.bot and TRAINING_STAFF in payload.member.roles:
         message = await channel.fetch_message(payload.message_id)
         await message.delete(delay = 1.0)
@@ -102,9 +102,9 @@ async def on_raw_reaction_remove(payload):
     if(str(payload.emoji) == '📢' and channel.name == "spontaneous-training") and not member.bot:
         await member.remove_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
     elif(str(payload.emoji) == '✈️') and channel.name == "role-assignments" and not member.bot:
-        await payload.member.add_roles(discord.utils.get(guild.roles,name="Group Flight"))
+        await member.remove_roles(discord.utils.get(guild.roles,name="Group Flights"))
     elif(str(payload.emoji) == '🎮') and channel.name == "role-assignments" and not member.bot:
-        await payload.member.add_roles(discord.utils.get(guild.roles,name="Game Night"))
+        await member.remove_roles(discord.utils.get(guild.roles,name="Game nights"))
 
 @client.event
 async def on_message(message): # all reaction from message
@@ -129,10 +129,11 @@ async def on_message(message): # all reaction from message
             await myAppointment(message,guild)
             noCommand = False
         elif command == "relief" or command == "closing":
-            await requestRelief(message,command,guild)
+            await requestRelief(message,command,guild,alert_type = "relief")
             noCommand = False
-
-
+        elif command == "helpme":
+            await requestRelief(message,command,guild,alert_type = "workload")
+            noCommand = False
 
         if(SENIOR_STAFF in message.author.roles or FACILITY_STAFF in message.author.roles or TRAINING_STAFF in message.author.roles):
             if(command == "spontaneous" or command == "sp" ):
@@ -180,8 +181,11 @@ async def on_message(message): # all reaction from message
                 print("Working on sending reminders")
                 await sendTrainingReminder(guild)
                 noCommand = False
-            elif(command == "optionalroles"):
+            elif(command == "optionalrolesembed"):
                 await optionalRolesMessage(guild)
+                noCommand = False
+            elif(command == "reliefembed"):
+                await reliefEmbed(guild)
                 noCommand = False
             '''
             elif(command == "updatefieldstatus"):
