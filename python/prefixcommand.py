@@ -4,6 +4,7 @@ import discord
 from datetime import datetime, timedelta
 import requests
 import pytz
+import asyncio
 from typing import Optional
 
 from time import time
@@ -23,7 +24,6 @@ site_url        = config['site_url']
 guild_id        = int(config['guild_id'])
 FACILITY_ID     = config['FACILITY_ID']
 FACILITY_NAME   = config['FACILITY_NAME']
-SP_Channel_ID   = int(config['SP_Channel_ID'])
 SNR_Channel_ID  = int(config['SNR_Channel_ID'])
 
 DTW_SB_ID = int(config['DTW_SB'])
@@ -33,7 +33,20 @@ BUF_SB_ID = int(config['BUF_SB'])
 
 _last_workload_alert: dict[str, float] = {}
 
+Relief_Subscribe_Message_ID = int(config.get("Relief_Subscribe_Message_ID", "0"))
+Relief_Subscribe_Emoji = config.get("Relief_Subscribe_Emoji", "📣")
+
 UTC = pytz.UTC
+
+FLAG_KEY = {
+    "S1": "s1",
+    "S2": "s2",
+    "S3": "s3",
+    "C1": "c1",
+    "C3": "c3",
+}
+
+RANK = {"OBS": 0, "S1": 1, "S2": 2, "S3": 3, "C1": 4, "C3": 5}
 
 async def syncroles(user, guild , live = False):
     query = site_url+'/api/data/bot/?discord_id='+str(user.id)
@@ -198,6 +211,25 @@ async def welcomeMessage(message):
     await message.channel.send(embed = embed)
     return
 
+async def optionalRolesMessage(guild):
+    channel = discord.utils.get(guild.channels,name="role-assignments")
+    embed = discord.Embed(colour=0x2664D8, title='Optional Roles')
+    embed.add_field(name='Why Optional Roles?',
+                value='Optional roles in Discord help reduce unwanted pings by letting members choose which notifications they receive. This prevents notification fatigue, avoids overusing @everyone mentions, and ensures messages reach only interested users, creating a cleaner and more respectful server experience.',
+                inline=False)
+    embed.add_field(name='Group Flight Role ✈️',
+            value='Click this role to sign up for community group flights—all pilots are welcome.',
+            inline=False)
+    embed.add_field(name='Game Night Role 🎮',
+            value='Click this role to join community game nights—all users are welcome.',
+            inline=False)
+    embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team')
+
+    msg = await channel.send(embed = embed)
+    await msg.add_reaction('✈️')
+    await msg.add_reaction('🎮')
+
+
 async def spontaneous_embed(message):
     embed = discord.Embed(colour=0x2664D8, title='Spontaneous Training', url=site_url)
     embed.add_field(name='What is Spontaneous Training?',
@@ -223,7 +255,7 @@ async def spontaneous_embed(message):
     return
 
 async def spontaneous(message,command,guild):
-    if (message.channel.id == SP_Channel_ID):
+    if (message.channel.name == "spontaneous-training"):
         content = message.content.replace(prefix+command,"")
         limit = []
         if "l:" in message.content:
@@ -276,7 +308,7 @@ async def spontaneous(message,command,guild):
         await message.author.send("Incorrect Channel")
 
 async def trainingRequest(message,command,guild):
-    if (message.channel.id == SP_Channel_ID):
+    if (message.channel.name == "spontaneous-training"):
         content = message.content.replace(prefix+command,"")
         if "t:" in content:
             decoded = content.split("t:")
@@ -303,39 +335,6 @@ async def trainingRequest(message,command,guild):
             )
             embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
             await message.channel.send(embed = embed, delete_after=432000.0) #auto delete after 12 hrs
-        else:
-            await message.author.send('**ERROR**\n Missing Parameter')
-    else:
-        await message.author.send('**ERROR**\n Incorrect Channel')
-
-async def trainingRequest(message,command,guild):
-    if (message.channel.id == SP_Channel_ID):
-        content = message.content.replace(prefix+command,"")
-        if "t:" in content:
-            decoded = content.split("t:")
-            time = decoded[1]
-            embed = discord.Embed(
-                color=0xFFCC00,
-                title="Training Request",
-                url=site_url
-            )
-            embed.add_field(
-                name="Student",
-                value=f'<@{message.author.id}>',
-                inline=False
-            )
-            embed.add_field(
-                name="Session Type",
-                value=decoded[0],
-                inline=False
-            )
-            embed.add_field(
-                name="Date/Time",
-                value=time,
-                inline=False
-            )
-            embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
-            return await message.channel.send(embed = embed, delete_after=432000.0) #auto delete after 12 hrs
         else:
             await message.author.send('**ERROR**\n Missing Parameter')
     else:
@@ -694,100 +693,262 @@ async def myAppointment(message,guild):
 
         await message.author.send(content = "There is an error occurs when getting the data. Please try again later.")
 
-async def requestRelief(message, command, guild):
-    Relief_Channel_ID = discord.utils.get(guild.channels,name = "wm-chat") 
-    Relief_Channel_ID = Relief_Channel_ID.id
-    if message.channel.id != Relief_Channel_ID:
-        await message.author.send(message.channel.id)
-        await message.author.send(Relief_Channel_ID)
-        return await message.author.send("**ERROR**\n Incorrect Channel")
 
-    # Example message: "!relief 15 mins"
-    # Remove the command token only once
-    eta_text = message.content.replace(prefix + command, "", 1).strip()
+async def reliefEmbed(guild):
+    channel = discord.utils.get(guild.channels,name="relief")
+    embed = discord.Embed(colour=0x2664D8, title='Relief Rules')
+    embed.add_field(name='What is this?',
+                value='This channel is designated for relief calls when you are closing or requesting underlying facility coverage due to high demand. Access to this function is currently limited to **S3 and above**.',
+                inline=False)
+    embed.add_field(name='How to use is?',
+            value=("**!relief [time]** – Notify others when you are requesting relief\n"
+                    "**!closing [time]** – Notify when you are closing your position\n"
+                    "**!helpme [position]** – Request coverage for a specific underlying facility"),
+            inline=False)
+    embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team')
 
-    if not eta_text:
-        return await message.author.send("**ERROR**\n Missing time. Example: `!relief 15 mins`")
+    msg = await channel.send(embed = embed)
 
-    # 1) Get CID from Discord ID
+
+async def requestRelief(message, command, guild, alert_type):
     try:
-        user = await webQuery_async(
-            site_url + "/api/data/bot/discordID2CID.php?discord_id=" + str(message.author.id),
-            key=site_token
+        try:
+            user = await webQuery_async(site_url + '/api/data/bot/discordID2CID.php?discord_id='+str(message.author.id),key = site_token)
+        except Exception as e:
+            print("discordID2CID fetch failed:", e)
+            return await message.author.send("**ERROR**\n Unable to look up your CID right now.")
+
+        if not user:
+            return await message.author.send(content = "I cannot find your information in the system. Please link your discord with the ZOB website.")
+        
+        if not has_rating_at_least(user or {}, "S3", require_full=False):
+            return await message.author.send(content="You must be S3 or above to request relief.")
+
+        Relief_Channel_ID = discord.utils.get(guild.channels,name = "relief") 
+        Relief_Channel_ID = Relief_Channel_ID.id
+        if message.channel.id != Relief_Channel_ID:
+            await message.author.send(message.channel.id)
+            await message.author.send(Relief_Channel_ID)
+            return await message.author.send("**ERROR**\n Incorrect Channel")
+
+        # Example message: "!relief 15 mins"
+        # Remove the command token only once
+        eta_text = message.content.replace(prefix + command, "", 1).strip()
+
+        if not eta_text:
+            return await message.author.send("**ERROR**\n Missing time or position. Example: `!relief 15 mins`")
+
+        # 1) Get CID from Discord ID
+        if not user or not user.get("cid"):
+            return await message.author.send("**ERROR**\n I cannot find your CID (is your account linked?).")
+
+        try:
+            cid = int(user["cid"])
+        except Exception:
+            return await message.author.send("**ERROR**\n CID returned was invalid.")
+
+        # 2) Pull workload API
+        try:
+            workload = await webQuery_async(
+                site_url + "/api/data/ids/workload?json=1",
+                key=site_token
+            )
+        except Exception as e:
+            print("workload fetch failed:", e)
+            return await message.author.send("**ERROR**\n Unable to read workload data right now.")
+
+        buckets = (workload or {}).get("controllers", [])
+        if not isinstance(buckets, list) or not buckets:
+            return await message.author.send("**ERROR**\n Workload data was empty.")
+
+        # 3) Match CID inside workload controllers
+        match_bucket = None
+        match_ctrl = None
+
+        for b in buckets:
+            for c in (b or {}).get("controllers", []) or []:
+                try:
+                    if int(c.get("cid", -1)) == cid:
+                        match_bucket = b
+                        match_ctrl = c
+                        break
+                except Exception:
+                    continue
+            if match_bucket:
+                break
+
+        if not match_bucket or not match_ctrl:
+            return await message.author.send("**ERROR**\n I don’t see you on an active frequency right now.")
+
+        callsign = match_ctrl.get("callsign") or match_ctrl.get("vnas_callsign") or "UNKNOWN"
+        freq = (match_bucket.get("frequency") or "").strip()
+
+        pilot_count = match_bucket.get("pilot_count")
+        if pilot_count is None:
+            pilot_count = len(match_bucket.get("pilots") or [])
+        pilot_count = int(pilot_count)
+
+        # Optional: don't rate-limit manual relief requests
+        cooldown = 0
+
+        sent = await send_relief_workload_alert(
+            alert_type=alert_type,
+            guild=guild,
+            callsign=callsign,
+            on_frequency=pilot_count,
+            frequency=freq,
+            cooldown_seconds=cooldown,
+            eta=eta_text,
         )
-    except Exception as e:
-        print("discordID2CID fetch failed:", e)
-        return await message.author.send("**ERROR**\n Unable to look up your CID right now.")
 
-    if not user or not user.get("cid"):
-        return await message.author.send("**ERROR**\n I cannot find your CID (is your account linked?).")
+        if not sent:
+            return await message.author.send("**ERROR**\n Relief request was not sent (cooldown or channel issue).")
+        
+    except Exception as e:
+            print("error in requestRelief():")
+            print(e)
+
+def required_rating_for_callsign(callsign: str) -> str:
+    cs = (callsign or "").upper()
+    if "CTR" in cs:
+        return "C1"
+    if "APP" in cs or "DEP" in cs:
+        return "S3"
+    if "TWR" in cs:
+        return "S2"
+    if "GND" in cs:
+        return "S1"
+    return "S1"
+
+def _cert_value(payload: dict, code: str) -> str:
+    key = FLAG_KEY.get(code)
+    if not key:
+        return ""
+    return str(payload.get(key, "")).strip().lower()
+
+def has_rating_at_least(payload: dict, required_code: str, require_full: bool) -> bool:
+    """
+    True if payload shows the controller has required_code or higher.
+    If require_full=True, the matching level must be "full" (not "mine").
+    Otherwise, "mine" OR "full" counts.
+    """
+    required_rank = RANK.get(required_code, 0)
+
+    # check from highest down, so higher certs satisfy lower requirements
+    for code, rank in sorted(RANK.items(), key=lambda kv: kv[1], reverse=True):
+        if rank < required_rank:
+            continue
+        if code == "OBS":
+            continue
+
+        v = _cert_value(payload, code)
+        if not v:
+            continue
+
+        if require_full:
+            if v == "full":
+                return True
+        else:
+            if v in ("mine", "full"):
+                return True
+
+    return False
+
+def rating_from_user_payload(user: dict) -> str:
+    if not user:
+        return "OBS"
+
+    # Highest-to-lowest
+    flag_order = [("C3", "c3"), ("C1", "c1"), ("S3", "s3"), ("S2", "s2"), ("S1", "s1")]
+    for code, key in flag_order:
+        v = user.get(key)
+        if v is None:
+            continue
+        if str(v).strip() not in (""):
+            return code
+
+    # Fallback if your endpoint ever includes a direct rating string
+    r = (user.get("rating") or "").strip().upper()
+    return r
+
+
+async def get_subscribed_users_from_reaction(
+    *,
+    channel: discord.abc.Messageable,
+    message_id: int,
+    emoji: str,
+) -> list[discord.User]:
+    if not message_id:
+        return []
 
     try:
-        cid = int(user["cid"])
-    except Exception:
-        return await message.author.send("**ERROR**\n CID returned was invalid.")
-
-    # 2) Pull workload API
-    try:
-        workload = await webQuery_async(
-            site_url + "/api/data/ids/workload?json=1",
-            key=site_token
-        )
+        sub_msg = await channel.fetch_message(message_id)
     except Exception as e:
-        print("workload fetch failed:", e)
-        return await message.author.send("**ERROR**\n Unable to read workload data right now.")
+        print(f"Failed to fetch subscribe message {message_id}: {e}")
+        return []
 
-    buckets = (workload or {}).get("controllers", [])
-    if not isinstance(buckets, list) or not buckets:
-        return await message.author.send("**ERROR**\n Workload data was empty.")
-
-    # 3) Match CID inside workload controllers
-    match_bucket = None
-    match_ctrl = None
-
-    for b in buckets:
-        for c in (b or {}).get("controllers", []) or []:
-            try:
-                if int(c.get("cid", -1)) == cid:
-                    match_bucket = b
-                    match_ctrl = c
-                    break
-            except Exception:
-                continue
-        if match_bucket:
+    target = None
+    for r in sub_msg.reactions:
+        if str(r.emoji) == str(emoji):
+            target = r
             break
 
-    if not match_bucket or not match_ctrl:
-        return await message.author.send("**ERROR**\n I don’t see you on an active frequency right now.")
+    if target is None:
+        return []
 
-    callsign = match_ctrl.get("callsign") or match_ctrl.get("vnas_callsign") or "UNKNOWN"
-    freq = (match_bucket.get("frequency") or "").strip()
+    users: list[discord.User] = []
+    try:
+        async for u in target.users(limit=None):
+            if not getattr(u, "bot", False):
+                users.append(u)
+    except Exception as e:
+        print(f"Failed reading reaction users: {e}")
 
-    pilot_count = match_bucket.get("pilot_count")
-    if pilot_count is None:
-        pilot_count = len(match_bucket.get("pilots") or [])
-    pilot_count = int(pilot_count)
+    return users
 
-    # Optional: don't rate-limit manual relief requests
-    cooldown = 0
 
-    sent = await send_relief_workload_alert(
-        alert_type="relief",
-        guild=guild,
-        callsign=callsign,
-        on_frequency=pilot_count,
-        frequency=freq,
-        cooldown_seconds=cooldown,
-        eta=eta_text,
+async def build_relief_ping_list(
+    *,
+    guild: discord.Guild,
+    channel: discord.TextChannel,
+    callsign: str,
+) -> list[str]:
+    required = required_rating_for_callsign(callsign)
+    require_full = ("DTW" in (callsign or "").upper())
+
+    reacted_users = await get_subscribed_users_from_reaction(
+        channel=channel,
+        message_id=Relief_Subscribe_Message_ID,
+        emoji=Relief_Subscribe_Emoji,
     )
+    if not reacted_users:
+        return []
 
-    if not sent:
-        return await message.author.send("**ERROR**\n Relief request was not sent (cooldown or channel issue).")
+    sem = asyncio.Semaphore(10)
+
+    async def check_one(u: discord.User) -> Optional[str]:
+        async with sem:
+            try:
+                payload = await webQuery_async(
+                    site_url + "/api/data/bot/discordID2CID.php?discord_id=" + str(u.id),
+                    key=site_token
+                )
+            except Exception:
+                return None
+
+            if has_rating_at_least(payload or {}, required, require_full=require_full):
+                m = guild.get_member(u.id)
+                return (m.mention if m else f"<@{u.id}>")
+            return None
+
+    results = await asyncio.gather(*(check_one(u) for u in reacted_users), return_exceptions=True)
+    return [r for r in results if isinstance(r, str) and r]
+
 
 
 async def send_relief_workload_alert(
     *,
-    alert_type: str,              # "workload" or "relief"
+    alert_type: str,              # "workload" or "relief" or "closing"
     guild: discord.Guild,
     callsign: str,
     on_frequency: int,
@@ -805,40 +966,75 @@ async def send_relief_workload_alert(
         return False
     _last_workload_alert[key] = now
 
-    # sp_role = discord.utils.get(guild.roles,name="Relief")
-
-    mention = "@here" if alert_type == "relief" else None
-
-    channel = discord.utils.get(guild.channels,name = "wm-chat") 
+    channel = discord.utils.get(guild.channels, name="relief")
     if channel is None:
         print("Channel not found in send_relief_workload_alert()")
+        return False
 
     title = "Controller Assistance Alert"
-    if (alert_type == "workload"):
+    if alert_type == "workload":
         title = "Controller Workload is High"
-    elif (alert_type == "relief"):
+    elif alert_type == "relief":
         title = "Controller Relief Requested"
+    elif alert_type == "closing":
+        title = "Controller Needs to Close Soon"
 
-    embed = discord.Embed(
-        title=title,
-        description="",
-        color=0x2664D8,
-    )
+    embed = discord.Embed(title=title, description="", color=0x2664D8)
     embed.add_field(name="Callsign", value=str(callsign), inline=False)
 
     if frequency:
         embed.add_field(name="Frequency", value=str(frequency), inline=True)
 
     embed.add_field(name="Active on Frequency", value=str(on_frequency), inline=True)
-    if eta: 
-        embed.add_field(name="Relieve by (ETA)", value=str(eta), inline=False)
+
+    if eta:
+        if alert_type == "workload":
+            embed.add_field(name="Requesting help on", value=str(eta), inline=False)
+        else:
+            embed.add_field(name="Relieve by (ETA)", value=str(eta), inline=False)
 
     embed.set_footer(text=f"Maintained by the v{FACILITY_ID} Web Services Team")
 
+    content = None
+
+    #mentions = await build_relief_ping_list(guild=guild, channel=channel, callsign=callsign)
+
+    content = "@here"
+
+    '''
+    # If content is huge, split it (Discord 2000 char limit)
+    if content and len(content) > 1900:
+        chunks = []
+        cur = ""
+        for m in content.split():
+            if len(cur) + len(m) + 1 > 1900:
+                chunks.append(cur.strip())
+                cur = ""
+            cur += m + " "
+        if cur.strip():
+            chunks.append(cur.strip())
+
+        # First chunk gets the embed
+        await channel.send(
+            content=chunks[0],
+            embed=embed,
+            allowed_mentions=discord.AllowedMentions(users=True, everyone=True),
+            delete_after=3600.0
+        )
+        # Remaining chunks mention only
+        for ch in chunks[1:]:
+            await channel.send(
+                content=ch,
+                allowed_mentions=discord.AllowedMentions(users=True, everyone=True),
+                delete_after=3600.0
+            )
+        return True
+    '''
     await channel.send(
-        content=(mention),
+        content=content,
         embed=embed,
-        allowed_mentions=discord.AllowedMentions(everyone=True),
-        delete_after=3600.0 #auto delete after 1 hr
+        allowed_mentions=discord.AllowedMentions(users=True, everyone=True),
+        delete_after=3600.0
     )
     return True
+

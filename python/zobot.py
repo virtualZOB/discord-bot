@@ -3,12 +3,9 @@ import configparser
 from prefixcommand import *
 import time
 from zoneinfo import ZoneInfo
-import pytz
 import datetime
 from discord.ext import tasks, commands
 import json
-
-import aiohttp
 
 # If DEBUGGING turn this on to prevent bot get banned
 DEBUG = False
@@ -90,6 +87,13 @@ async def on_raw_reaction_add(payload):
     channel = discord.utils.get(guild.channels,id = payload.channel_id)
     if(str(payload.emoji) == '📢' and channel.name == "spontaneous-training" and not payload.member.bot):
         await payload.member.add_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
+    elif(str(payload.emoji) == '✈️') and channel.name == "role-assignments" and not payload.member.bot:
+        await payload.member.add_roles(discord.utils.get(guild.roles,name="Group Flights"))
+    elif(str(payload.emoji) == '🎮') and channel.name == "role-assignments" and not payload.member.bot:
+        await payload.member.add_roles(discord.utils.get(guild.roles,name="Game nights"))
+    elif(str(payload.emoji) == '✅') and channel.name == "spontaneous-training" and not payload.member.bot and TRAINING_STAFF in payload.member.roles:
+        message = await channel.fetch_message(payload.message_id)
+        await message.delete(delay = 1.0)
 
 @client.event
 async def on_raw_reaction_remove(payload):
@@ -97,6 +101,10 @@ async def on_raw_reaction_remove(payload):
     channel = discord.utils.get(guild.channels,id = payload.channel_id) 
     if(str(payload.emoji) == '📢' and channel.name == "spontaneous-training") and not member.bot:
         await member.remove_roles(discord.utils.get(guild.roles,name="Spontaneous Training"))
+    elif(str(payload.emoji) == '✈️') and channel.name == "role-assignments" and not member.bot:
+        await member.remove_roles(discord.utils.get(guild.roles,name="Group Flights"))
+    elif(str(payload.emoji) == '🎮') and channel.name == "role-assignments" and not member.bot:
+        await member.remove_roles(discord.utils.get(guild.roles,name="Game nights"))
 
 @client.event
 async def on_message(message): # all reaction from message
@@ -121,10 +129,11 @@ async def on_message(message): # all reaction from message
             await myAppointment(message,guild)
             noCommand = False
         elif command == "relief" or command == "closing":
-            await requestRelief(message,command,guild)
+            await requestRelief(message,command,guild,alert_type = "relief")
             noCommand = False
-
-
+        elif command == "helpme":
+            await requestRelief(message,command,guild,alert_type = "workload")
+            noCommand = False
 
         if(SENIOR_STAFF in message.author.roles or FACILITY_STAFF in message.author.roles or TRAINING_STAFF in message.author.roles):
             if(command == "spontaneous" or command == "sp" ):
@@ -171,6 +180,12 @@ async def on_message(message): # all reaction from message
             elif(command == "reminder"):
                 print("Working on sending reminders")
                 await sendTrainingReminder(guild)
+                noCommand = False
+            elif(command == "optionalrolesembed"):
+                await optionalRolesMessage(guild)
+                noCommand = False
+            elif(command == "reliefembed"):
+                await reliefEmbed(guild)
                 noCommand = False
             '''
             elif(command == "updatefieldstatus"):
@@ -248,10 +263,10 @@ async def monitor_active_controller():
         if discord_id not in currn_active:
             member = guild.get_member(int(discord_id))
             if member:
+                to_delete.append(discord_id)
                 try:
                     await member.edit(nick=data["original_name"])
                     print(f"Restored nickname for {member.name}")
-                    to_delete.append(discord_id)
                 except discord.Forbidden:
                     print(f"Missing permission to restore nickname for {member.name}")
             else:
