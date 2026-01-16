@@ -4,6 +4,7 @@ import discord
 from datetime import datetime, timedelta
 import requests
 import pytz
+from zoneinfo import ZoneInfo
 import asyncio
 from typing import Optional
 
@@ -303,7 +304,16 @@ async def spontaneous(message,command,guild):
             embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
 
         sp_role = discord.utils.get(guild.roles,name="Spontaneous Training")
-        await message.channel.send(f'<@&{sp_role.id}>',embed = embed)
+        
+        EST = ZoneInfo("America/New_York")
+        now = datetime.now(EST)
+        three_am = now.replace(hour=3, minute=0, second=0, microsecond=0)
+        if now >= three_am:
+            three_am += timedelta(days=1)
+        # Seconds until 3 AM
+        seconds_to_3am = (three_am - now).total_seconds()
+        deletionTime = min(12*3600, max(seconds_to_3am, 6*3600))
+        await message.channel.send(f'<@&{sp_role.id}>',embed = embed, delete_after=deletionTime)
     else:
         await message.author.send("Incorrect Channel")
 
@@ -334,7 +344,15 @@ async def trainingRequest(message,command,guild):
                 inline=False
             )
             embed.set_footer(text = 'Maintained by the v'+FACILITY_ID+' Web Services Team and Training Department')
-            await message.channel.send(embed = embed, delete_after=432000.0) #auto delete after 12 hrs
+            EST = ZoneInfo("America/New_York")
+            now = datetime.now(EST)
+            three_am = now.replace(hour=3, minute=0, second=0, microsecond=0)
+            if now >= three_am:
+                three_am += timedelta(days=1)
+            # Seconds until 3 AM
+            seconds_to_3am = (three_am - now).total_seconds()
+            deletionTime = min(12*3600, max(seconds_to_3am, 6*3600))
+            await message.channel.send(embed = embed, delete_after=deletionTime) #auto delete after 12 hrs
         else:
             await message.author.send('**ERROR**\n Missing Parameter')
     else:

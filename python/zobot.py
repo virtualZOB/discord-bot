@@ -93,6 +93,12 @@ async def on_raw_reaction_add(payload):
         await payload.member.add_roles(discord.utils.get(guild.roles,name="Game nights"))
     elif(str(payload.emoji) == '✅') and channel.name == "spontaneous-training" and not payload.member.bot and TRAINING_STAFF in payload.member.roles:
         message = await channel.fetch_message(payload.message_id)
+        embed = message.embeds[0]
+        student_field = next(f for f in embed.fields if f.name == "Student")
+        mention = student_field.value  # "<@123456789012345678>"
+        student_id = int(mention.strip("<@>"))
+        student = guild.get_member(student_id)
+        await student.send(content = f'{payload.member.display_name}(<@{payload.member.id}>) has picked up your training request. Please join the training lobby within 15 minutes.')
         await message.delete(delay = 1.0)
 
 @client.event
