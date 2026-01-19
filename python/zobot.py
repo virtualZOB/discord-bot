@@ -39,8 +39,6 @@ client = discord.Client(intents=intents)
 #Relief Settings
 ALERT_THRESHOLD = 35
 
-L_TREQ = []
-
 # Load center name
 try:
     with open("center.json", "r") as f:
@@ -121,9 +119,7 @@ async def on_message(message): # all reaction from message
         command = content[0]
 
         if(command == "treq" or command == "trainingrequest"):
-            msg = await trainingRequest(message,command,guild)
-            if (msg):
-                L_TREQ.append([msg,time.time()])
+            await trainingRequest(message,command,guild)
             noCommand = False
         elif (command == "sync"):
             await syncroles(message.author, guild)
@@ -342,10 +338,11 @@ async def on_voice_state_update(member, before, after):
         
 @tasks.loop(seconds=900)       
 async def quaterHourLooped_tasks():
-    global L_TREQ
-    L_TREQ = await deleteTreq(L_TREQ)
     if not DEBUG:
         await updateStatusBoard(guild)
+
+    await delete_expired_messages(guild)
+
 
 @tasks.loop(seconds = 43200.0)
 async def dayilyLooped_tasks():

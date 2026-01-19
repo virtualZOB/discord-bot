@@ -1,3 +1,5 @@
+import json
+import os
 from webQuery import getPFieldStatus, schedulerQuery, webQuery_async
 import configparser
 import discord
@@ -10,6 +12,8 @@ from typing import Optional
 
 from time import time
 import html
+
+FILE_LOCK = asyncio.Lock()
 
 configname = 'DEFAULT'
 configs = configparser.ConfigParser()
@@ -237,13 +241,13 @@ async def spontaneous_embed(message):
                 value='Spontaneous Training is a venue for both students and training staff to post impromptu training availability in this channel. Do note that this source of availability **DOES NOT** guarantee that you will receive training, but instead is offered as a courtesy on behalf of the training staff. You MUST follow the rules listed below to use this system.',
                 inline=False)
     embed.add_field(name='What happens if I have a session scheduled already?',
-                value='If you already have a session scheduled and you place interest for Spontaneous Training, your previous session will not be canceled and you may keep that session at your discretion. Do note that students that do not have a session scheduled may get priority over those that have a session scheduled on setmore.',
+                value='If you already have a session scheduled and you place interest for Spontaneous Training, your previous session will not be canceled and you may keep that session at your discretion. Do note that students that do not have a session scheduled may get priority over those that have a session scheduled.',
                 inline=False)
     embed.add_field(name='How do I get notified?',
                 value='To be notified of Spontaneous Training availability being posted by training staff, react to this message with a 📢.',
                 inline=False)
     embed.add_field(name='Note',
-                value='This is not a venue to encourage soliciting, and we recommend being respectful when coordinating times with training staff for Spontaneous Training or sessions outside of the normal training schedule available on Setmore. If you have any questions or concerns regarding training, reach out to the Training Administrator (TA) or an appropriate member of the training staff.',
+                value='This is not a venue to encourage soliciting, and we recommend being respectful when coordinating times with training staff for Spontaneous Training or sessions outside of the normal training schedule available on Scheddy. If you have any questions or concerns regarding training, reach out to the Training Administrator (TA) or an appropriate member of the training staff.',
                 inline=False)
     embed.add_field(name='Rules',
                 value='1.You must be prepared for your session. If you come to a spontaneous training session unprepared, it may result in the loss of privileges to use this system.\n2.**You must be prepared for an immediate start within the availability window that you provide. If you are not ready to start when contacted by a training staff member, your request will be deleted.**\n3.Your availability window must be within 6 hours of your posting and you may not post future availability. Availability must only be posted when you are free.\n4.Do not direct message or tag training staff members unless they reach out to you or have posted their own availability in this channel.\n5.Requests should be made in **Eastern** time.\n6.Messages will be deleted at the end of the day.\n7.There is **NO GUARANTEE** that your request will be picked up. Training staff are all volunteers and will get to your request if they can.',
@@ -312,8 +316,9 @@ async def spontaneous(message,command,guild):
             three_am += timedelta(days=1)
         # Seconds until 3 AM
         seconds_to_3am = (three_am - now).total_seconds()
-        deletionTime = min(12*3600, max(seconds_to_3am, 6*3600))
-        await message.channel.send(f'<@&{sp_role.id}>',embed = embed, delete_after=deletionTime)
+        deletionTime = min(8.0*3600.0, max(seconds_to_3am, 6.0*3600.0))
+        embed = await message.channel.send(f'<@&{sp_role.id}>',embed = embed)
+        await schedule_message_delete(embed,deletionTime)
     else:
         await message.author.send("Incorrect Channel")
 
@@ -351,8 +356,9 @@ async def trainingRequest(message,command,guild):
                 three_am += timedelta(days=1)
             # Seconds until 3 AM
             seconds_to_3am = (three_am - now).total_seconds()
-            deletionTime = min(12*3600, max(seconds_to_3am, 6*3600))
-            await message.channel.send(embed = embed, delete_after=deletionTime) #auto delete after 12 hrs
+            deletionTime = min(8.0*3600.0, max(seconds_to_3am, 6.0*3600.0))
+            embed = await message.channel.send(embed = embed)
+            await schedule_message_delete(embed,deletionTime)
         else:
             await message.author.send('**ERROR**\n Missing Parameter')
     else:
@@ -487,19 +493,6 @@ async def waitlist(guild):
             return
         if channel:
             await channel.send(embed = embed)
-
-async def deleteTreq(L_TREQ):
-    for req in L_TREQ:
-        if (time()-req[1])>43200:
-            try:
-                await req[0].delete() #delete the message
-            except Exception as e:
-                print("Error in deleteTreq(): ")
-                print(e)
-            finally:
-                L_TREQ.remove(req) # remove from queue
-
-    return L_TREQ
 
 async def closethread(message,guild):
     #check if it is a thread
@@ -1056,3 +1049,63 @@ async def send_relief_workload_alert(
     )
     return True
 
+# Delete message logic
+FILE_PATH = "toDeleteMsg.json"
+def load_delete_queue():
+    if not os.path.exists(FILE_PATH):
+        # Create empty JSON array
+        with open(FILE_PATH, "w") as f:
+            json.dump([], f)
+        return []
+
+    try:
+        with open(FILE_PATH, "r") as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        # Recover from corrupted file
+        with open(FILE_PATH, "w") as f:
+            json.dump([], f)
+        return []
+    
+async def schedule_message_delete(message: discord.Message, delay_seconds: int):
+    delete_at = time() + delay_seconds
+
+    async with FILE_LOCK:
+        queue = load_delete_queue()
+        queue.append({
+            "message_id": message.id,
+            "channel_id": message.channel.id,
+            "delete_at": delete_at
+        })
+        save_delete_queue(queue)
+
+def save_delete_queue(data):
+    with open(FILE_PATH, "w") as f:
+        json.dump(data, f, indent=2)
+
+async def delete_expired_messages(guild):
+    now = time()
+    async with FILE_LOCK:
+        queue = load_delete_queue()
+        remaining = []
+
+        for item in queue:
+            if item["delete_at"] > now:
+                remaining.append(item)
+                continue
+
+            channel = guild.get_channel(item["channel_id"])
+            if not channel:
+                continue
+
+            try:
+                msg = await channel.fetch_message(item["message_id"])
+                await msg.delete()
+            except discord.NotFound:
+                pass
+            except discord.Forbidden:
+                pass
+            except discord.HTTPException:
+                remaining.append(item)
+
+        save_delete_queue(remaining)
