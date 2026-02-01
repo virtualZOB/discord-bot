@@ -860,7 +860,7 @@ def has_rating_at_least(payload: dict, required_code: str, require_full: bool) -
             if v == "full":
                 return True
         else:
-            if v in ("mine", "full"):
+            if v in ("mine", "dep", "full"):
                 return True
 
     return False
