@@ -522,7 +522,7 @@ async def updateStatusBoard(guild):
         
 
 async def sendTrainingReminder(guild):
-
+    
     # Get Sessions from Scheddy
     bookings = await schedulerQuery(
         "https://scheddy.clevelandcenter.org/api/allSessions",
@@ -530,7 +530,6 @@ async def sendTrainingReminder(guild):
     )
 
     now_utc = datetime.now(UTC)
-
     for booking in bookings or []:
         try:
             session = booking["session"]
@@ -860,7 +859,7 @@ def has_rating_at_least(payload: dict, required_code: str, require_full: bool) -
             if v == "full":
                 return True
         else:
-            if v in ("mine", "dep", "full"):
+            if v in ("mine","dep","full"):
                 return True
 
     return False

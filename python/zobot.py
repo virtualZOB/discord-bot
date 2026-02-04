@@ -37,7 +37,7 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 
 #Relief Settings
-ALERT_THRESHOLD = 35
+ALERT_THRESHOLD = 25
 
 # Load center name
 try:
@@ -223,24 +223,34 @@ async def monitor_active_controller():
         nicknames = {}
 
     currn_active = set()
-
+    act_role = discord.utils.get(guild.roles,name= "Active Controller")
     # Process all currently active controllers
     for controller in actives:
         discord_id = controller['discord_id']
+        if not isinstance(controller, dict):
+            print(f"Skipping invalid controller entry: {controller}")
+            continue
+
+        discord_id = controller.get('discord_id')
         if not discord_id:
-            print(f"{controller['cid']} does not have discord linked")
+            print(f"{controller.get('cid')} does not have discord linked")
             continue
 
         currn_active.add(discord_id)
 
         member = guild.get_member(int(discord_id))
+        await member.add_roles(act_role)
         if not member:
             print(f"Discord member {discord_id} not found in guild.")
             continue
 
         # Determine new nickname based on role
         if controller['type'] == 'Center':
-            newName = centers[controller['position_name'][-2:]] + controller['position_name'][-2:] + ' | ' + controller['OI']
+            try: 
+                newName = centers[controller['position_name'][-2:]] + controller['position_name'][-2:] + ' | ' + controller['OI']
+            except Exception as e:
+                print (e)
+                newName = controller['default_callsign'] + ' | ' + controller['OI']
         else:
             newName = controller['default_callsign'] + ' | ' + controller['OI']
 
@@ -264,6 +274,7 @@ async def monitor_active_controller():
     for discord_id, data in nicknames.items():
         if discord_id not in currn_active:
             member = guild.get_member(int(discord_id))
+            await member.remove_roles(act_role)
             if member:
                 to_delete.append(discord_id)
                 try:
@@ -286,45 +297,44 @@ async def monitor_active_controller():
     if actives:
         try:
             workload = await webQuery_async(site_url + "/api/data/ids/workload?json=1", site_token)
+            buckets = (workload or {}).get("controllers", [])
+            if isinstance(buckets, list) and buckets:
+
+                alerts: list[tuple[str, int, str]] = []  # (callsign, pilot_count, frequency)
+
+                for b in buckets:
+                    freq = (b or {}).get("frequency")
+                    if not freq:
+                        continue
+
+                    pilot_count = b.get("pilot_count")
+                    if pilot_count is None:
+                        pilot_count = len(b.get("pilots") or [])
+                    pilot_count = int(pilot_count)
+
+                    if pilot_count <= ALERT_THRESHOLD:
+                        continue
+
+                    # workload payload controllers on that frequency
+                    ctrls = b.get("controllers") or []
+                    for c in ctrls:
+                        callsign = c.get("callsign") or c.get("vnas_callsign")
+                        if callsign:
+                            alerts.append((callsign, pilot_count, freq))
+
+                if alerts:
+                    # Send alerts
+                    for callsign, count_on_freq, freq in alerts:
+                        await send_relief_workload_alert(
+                            alert_type="workload",
+                            guild=guild,
+                            callsign=callsign,
+                            on_frequency=count_on_freq,
+                            frequency=freq,
+                            cooldown_seconds=20 * 60,
+                        )
         except Exception as e:
             print(f"workload fetch failed: {e}")
-
-        buckets = (workload or {}).get("controllers", [])
-        if isinstance(buckets, list) and buckets:
-
-            alerts: list[tuple[str, int, str]] = []  # (callsign, pilot_count, frequency)
-
-            for b in buckets:
-                freq = (b or {}).get("frequency")
-                if not freq:
-                    continue
-
-                pilot_count = b.get("pilot_count")
-                if pilot_count is None:
-                    pilot_count = len(b.get("pilots") or [])
-                pilot_count = int(pilot_count)
-
-                if pilot_count <= ALERT_THRESHOLD:
-                    continue
-
-                # workload payload controllers on that frequency
-                ctrls = b.get("controllers") or []
-                for c in ctrls:
-                    callsign = c.get("callsign") or c.get("vnas_callsign")
-                    if callsign:
-                        alerts.append((callsign, pilot_count, freq))
-
-            if alerts:
-                # Send alerts
-                for callsign, count_on_freq, freq in alerts:
-                    await send_relief_workload_alert(
-                        alert_type="workload",
-                        guild=guild,
-                        callsign=callsign,
-                        on_frequency=count_on_freq,
-                        frequency=freq,
-                        cooldown_seconds=20 * 60,
-                    )
 
 
 
@@ -370,7 +380,7 @@ async def on_scheduled_event_update(before,after):
 
         # Create a thread with the same name as the event
         thread = await channel.create_thread(
-            name="[debrief]"+after.name,
+            name="[Debrief]"+after.name,
             type=discord.ChannelType.public_thread,
             auto_archive_duration=4320  # 72 hours
         )
